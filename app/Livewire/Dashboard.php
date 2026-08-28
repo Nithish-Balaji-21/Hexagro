@@ -2,6 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\WithDateRange;
+use App\Livewire\Concerns\WithUnitScopeRefresh;
+use App\Services\DashboardService;
+use App\Services\Dto\ShareholderBar;
 use App\Support\UnitScope;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -11,19 +15,35 @@ use Livewire\Component;
 #[Title('Dashboard')]
 class Dashboard extends Component
 {
-    public string $scopeLabel = '';
+    use WithDateRange;
+    use WithUnitScopeRefresh;
 
-    /** @var list<string> */
-    public array $selectedUnitNames = [];
-
-    public function mount(UnitScope $unitScope): void
+    public function render(DashboardService $dashboardService, UnitScope $unitScope)
     {
-        $this->scopeLabel = $unitScope->scopeLabel();
-        $this->selectedUnitNames = $unitScope->selectedUnits()->pluck('name')->all();
+        $unitIds = $unitScope->selectedUnitIds();
+        $range = $this->dateRange();
+        $summary = $dashboardService->summary($range, $unitIds);
+        $shareholderBars = $dashboardService->shareholderBars($unitIds);
+
+        return view('livewire.dashboard', [
+            'summary' => $summary,
+            'shareholderBars' => $shareholderBars,
+            'scopeLabel' => $unitScope->scopeLabel(),
+            'allSelected' => $unitScope->isAllSelected(),
+            'chartData' => $this->chartPayload($shareholderBars),
+        ]);
     }
 
-    public function render()
+    /**
+     * @param  list<ShareholderBar>  $bars
+     * @return array<string, mixed>
+     */
+    private function chartPayload(array $bars): array
     {
-        return view('livewire.dashboard');
+        return [
+            'labels' => collect($bars)->pluck('name')->all(),
+            'contributions' => collect($bars)->map(fn (ShareholderBar $bar): float => (float) $bar->contribution)->all(),
+            'fairShares' => collect($bars)->map(fn (ShareholderBar $bar): float => (float) $bar->fairShare)->all(),
+        ];
     }
 }

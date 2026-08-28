@@ -8,6 +8,8 @@
         <h1>{{ $title }}</h1>
         @if ($subtitle)
             <div class="sub">{{ $subtitle }}</div>
+        @elseif (isset($subtitleSlot))
+            <div class="sub">{{ $subtitleSlot }}</div>
         @endif
     </div>
 
