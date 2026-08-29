@@ -4,9 +4,7 @@ namespace App\Livewire\Reports;
 
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
-use App\Models\Entity;
 use App\Models\Purchase;
-use App\Support\Money;
 use App\Support\UnitScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -129,7 +127,7 @@ class PurchasesIndex extends Component
             'totalBilled' => (string) $this->baseQuery()->whereNotNull('total_billed')->sum('total_billed'),
             'totalPaid' => (string) $this->baseQuery()->sum('total_paid'),
             'totalOutstanding' => (string) $this->baseQuery()->whereNotNull('total_billed')->sum('balance'),
-            'visibleUnits' => $unitScope->visibleUnits(),
+            'scopedUnits' => $this->scopedUnits(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
         ]);

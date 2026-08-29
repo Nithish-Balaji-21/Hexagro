@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'cc_utilised',
     'current_balance',
     'term_loan',
+    'tl_limit',
     'alam_utilised',
     'created_by',
 ])]
@@ -43,6 +44,7 @@ class BankingSnapshot extends Model
             'cc_utilised' => 'decimal:2',
             'current_balance' => 'decimal:2',
             'term_loan' => 'decimal:2',
+            'tl_limit' => 'decimal:2',
             'alam_utilised' => 'decimal:2',
         ];
     }

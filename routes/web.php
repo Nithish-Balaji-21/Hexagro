@@ -5,6 +5,7 @@ use App\Livewire\Dashboard;
 use App\Livewire\Finance\BankingIndex;
 use App\Livewire\Finance\EntityLedgerIndex;
 use App\Livewire\Finance\HistoricalAlamIndex;
+use App\Livewire\Import\ImportIndex;
 use App\Livewire\Reports\MonthlySpendIndex;
 use App\Livewire\Reports\PurchasesIndex;
 use App\Livewire\Reports\SalesIndex;
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'unit.scope'])->group(function (): void {
     Route::get('/banking', BankingIndex::class)->name('banking');
     Route::get('/ledger-book', EntityLedgerIndex::class)->name('ledger-book');
     Route::get('/historical-alam', HistoricalAlamIndex::class)->name('historical-alam');
+    Route::get('/import', ImportIndex::class)->name('import');
 
     Route::post('/logout', function () {
         Auth::logout();
@@ -39,4 +41,14 @@ Route::middleware(['auth', 'unit.scope'])->group(function (): void {
 
         return redirect()->route('login');
     })->name('logout');
+
+    Route::post('/switch-user', function () {
+        abort_unless(auth()->user()?->isAdmin(), 403);
+
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+
+        return redirect()->route('login');
+    })->name('switch-user');
 });

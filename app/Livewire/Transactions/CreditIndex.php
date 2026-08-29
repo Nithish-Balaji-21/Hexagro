@@ -160,13 +160,12 @@ class CreditIndex extends Component
 
     public function render(UnitScope $unitScope)
     {
-        $visibleUnits = $unitScope->visibleUnits();
         $range = $this->dateRange();
 
         return view('livewire.transactions.credit-index', [
             'transactions' => $this->transactions($range),
             'totalAmount' => $this->filteredTotal($range),
-            'visibleUnits' => $visibleUnits,
+            'scopedUnits' => $this->scopedUnits(),
             'entities' => Entity::query()->active()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),

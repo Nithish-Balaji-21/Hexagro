@@ -3,8 +3,6 @@
 namespace App\Livewire\Concerns;
 
 use App\Support\DateRange;
-use App\Support\UnitScope;
-use Livewire\Attributes\On;
 
 trait WithDateRange
 {
@@ -14,31 +12,84 @@ trait WithDateRange
 
     public string $rangeTo = '';
 
+    public bool $rangePickerOpen = false;
+
+    public string $pickerFrom = '';
+
+    public string $pickerTo = '';
+
+    public string $pickerPreset = 'custom';
+
     public function setRangePreset(string $preset): void
     {
-        $this->rangePreset = $preset;
+        if ($preset === 'custom') {
+            $this->openRangePicker();
 
-        if (in_array('Livewire\\WithPagination', class_uses_recursive(static::class), true)) {
-            $this->resetPage();
+            return;
         }
+
+        $this->rangePreset = $preset;
+        $this->rangePickerOpen = false;
+        $this->resetDateRangePage();
+    }
+
+    public function openRangePicker(): void
+    {
+        $range = $this->dateRange();
+        $this->pickerFrom = $range->from ?? '';
+        $this->pickerTo = $range->to ?? '';
+        $this->pickerPreset = $range->preset === 'custom' ? 'custom' : 'custom';
+        $this->rangePickerOpen = true;
+    }
+
+    public function setPickerPreset(string $preset): void
+    {
+        $range = DateRange::fromState($preset);
+        $this->pickerPreset = $preset;
+        $this->pickerFrom = $range->from ?? '';
+        $this->pickerTo = $range->to ?? '';
+        $this->dispatch('range-picker-dates', from: $this->pickerFrom, to: $this->pickerTo);
+    }
+
+    public function updatePickerDates(string $from, string $to): void
+    {
+        $this->pickerFrom = $from;
+        $this->pickerTo = $to;
+        $this->pickerPreset = 'custom';
+    }
+
+    public function applyRangePicker(): void
+    {
+        if ($this->pickerPreset !== 'custom') {
+            $this->rangePreset = $this->pickerPreset;
+            $range = DateRange::fromState($this->pickerPreset);
+            $this->rangeFrom = $range->from ?? '';
+            $this->rangeTo = $range->to ?? '';
+        } else {
+            $this->rangePreset = 'custom';
+            $this->rangeFrom = $this->pickerFrom;
+            $this->rangeTo = $this->pickerTo;
+        }
+
+        $this->rangePickerOpen = false;
+        $this->resetDateRangePage();
+    }
+
+    public function cancelRangePicker(): void
+    {
+        $this->rangePickerOpen = false;
     }
 
     public function updatedRangeFrom(): void
     {
         $this->rangePreset = 'custom';
-
-        if (in_array('Livewire\\WithPagination', class_uses_recursive(static::class), true)) {
-            $this->resetPage();
-        }
+        $this->resetDateRangePage();
     }
 
     public function updatedRangeTo(): void
     {
         $this->rangePreset = 'custom';
-
-        if (in_array('Livewire\\WithPagination', class_uses_recursive(static::class), true)) {
-            $this->resetPage();
-        }
+        $this->resetDateRangePage();
     }
 
     protected function dateRange(): DateRange
@@ -49,33 +100,11 @@ trait WithDateRange
             $this->rangeTo ?: null,
         );
     }
-}
 
-trait WithUnitScopeRefresh
-{
-    #[On('units-changed')]
-    public function refreshUnitScope(): void
+    protected function resetDateRangePage(): void
     {
         if (in_array('Livewire\\WithPagination', class_uses_recursive(static::class), true)) {
             $this->resetPage();
         }
-    }
-
-    /**
-     * @return list<int>
-     */
-    protected function scopedUnitIds(): array
-    {
-        return app(UnitScope::class)->selectedUnitIds();
-    }
-
-    protected function scopeLabel(): string
-    {
-        return app(UnitScope::class)->scopeLabel();
-    }
-
-    protected function isAllUnitsSelected(): bool
-    {
-        return app(UnitScope::class)->isAllSelected();
     }
 }

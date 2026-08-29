@@ -9,8 +9,10 @@ use App\Models\HistoricalAlamExpense;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SettlementAdjustment;
+use App\Models\SettlementLedgerEntry;
 use App\Models\Transfer;
 use App\Observers\AuditableObserver;
+use App\Observers\LedgerSyncObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -53,10 +55,21 @@ class AppServiceProvider extends ServiceProvider
             BankingSnapshot::class,
             HistoricalAlamExpense::class,
             SettlementAdjustment::class,
+            SettlementLedgerEntry::class,
         ];
 
         foreach ($auditableModels as $model) {
             $model::observe(AuditableObserver::class);
+        }
+
+        $ledgerSyncModels = [
+            DebitTransaction::class,
+            CreditTransaction::class,
+            Transfer::class,
+        ];
+
+        foreach ($ledgerSyncModels as $model) {
+            $model::observe(LedgerSyncObserver::class);
         }
     }
 }

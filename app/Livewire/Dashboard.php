@@ -31,6 +31,7 @@ class Dashboard extends Component
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
             'chartData' => $this->chartPayload($shareholderBars),
+            'unitScopeVersion' => $this->unitScopeVersion,
         ]);
     }
 

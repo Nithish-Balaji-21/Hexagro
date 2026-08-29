@@ -10,7 +10,7 @@
     </x-hex.page-head>
 
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" />
-    <x-hex.unit-tabs :units="$visibleUnits" :active="$unitTab" />
+    <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
 
     <div class="card mb-4">
         <div class="card-head"><h3>Ledger — Net Position per Entity</h3></div>
@@ -106,7 +106,7 @@
                     <label><span>Date</span><input type="date" wire:model="formDate"></label>
                     <label><span>Cost Center</span>
                         <select wire:model="formCostCenterId">
-                            @foreach ($visibleUnits as $unit)
+                            @foreach ($scopedUnits as $unit)
                                 <option value="{{ $unit->id }}">{{ $unit->name }}</option>
                             @endforeach
                         </select>

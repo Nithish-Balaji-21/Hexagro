@@ -3,10 +3,10 @@
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" />
 
     <div class="filter-bar">
-        @if ($visibleUnits->count() > 1)
+        @if ($scopedUnits->count() > 1)
             <select wire:model.live="unitFilter">
                 <option value="">All selected units</option>
-                @foreach ($visibleUnits as $unit)
+                @foreach ($scopedUnits as $unit)
                     <option value="{{ $unit->id }}">{{ $unit->name }}</option>
                 @endforeach
             </select>
@@ -25,7 +25,7 @@
         <x-hex.kpi-card label="Total Spend" :value="\App\Support\Inr::format($totalAll, 2)" />
     </div>
 
-    <div class="card mb-4" wire:ignore>
+    <div class="card mb-4" wire:key="ms-chart-{{ md5(json_encode(['labels' => $chartLabels, 'data' => $chartData])) }}">
         <div class="card-head"><h3>Monthly Spend Trend</h3></div>
         <div class="chart-wrap"><div class="chart-canvas-box"><canvas id="chartMS" data-chart='@json(['labels' => $chartLabels, 'data' => $chartData])'></canvas></div></div>
     </div>
@@ -62,7 +62,7 @@
 
 @script
 <script>
-    function renderMSChart() {
+    window.renderMSChart = function() {
         const canvas = document.getElementById('chartMS');
         if (!canvas || typeof Chart === 'undefined') return;
         const payload = JSON.parse(canvas.dataset.chart || '{}');
@@ -72,8 +72,14 @@
             data: { labels: payload.labels || [], datasets: [{ label: 'Total spend', data: payload.data || [], backgroundColor: '#0B5D52', borderRadius: 5 }] },
             options: { maintainAspectRatio: false, responsive: true, plugins: { legend: { display: false } } },
         });
-    }
-    renderMSChart();
-    document.addEventListener('livewire:navigated', renderMSChart);
+    };
+    window.renderMSChart();
+    document.removeEventListener('livewire:navigated', window.renderMSChart);
+    document.addEventListener('livewire:navigated', window.renderMSChart);
+    Livewire.hook('morph.updated', () => {
+        if (document.getElementById('chartMS')) {
+            window.renderMSChart();
+        }
+    });
 </script>
 @endscript

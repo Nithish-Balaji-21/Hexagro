@@ -9,8 +9,8 @@
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" />
 
     <div class="filter-bar">
-        @if ($visibleUnits->count() > 1)
-            <select wire:model.live="unitFilter"><option value="">All units</option>@foreach($visibleUnits as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select>
+        @if ($scopedUnits->count() > 1)
+            <select wire:model.live="unitFilter"><option value="">All units</option>@foreach($scopedUnits as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select>
         @endif
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search vendor…">
     </div>
@@ -56,7 +56,7 @@
         <div class="modal-overlay show"><div class="modal">
             <div class="modal-head"><h3>{{ $editingId ? 'Edit Purchase' : 'Add Purchase' }}</h3><button type="button" wire:click="closeForm" class="tbl-icon-btn"><x-hex.icon name="x" /></button></div>
             <form wire:submit="save" class="modal-body"><div class="form-grid">
-                <label><span>Unit</span><select wire:model="formCostCenterId">@foreach($visibleUnits as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select></label>
+                <label><span>Unit</span><select wire:model="formCostCenterId">@foreach($scopedUnits as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select></label>
                 <label><span>Vendor</span><input type="text" wire:model="formVendor"></label>
                 <label><span>Total Billed</span><input type="number" step="0.01" wire:model="formBilled"></label>
                 <label><span>Total Paid</span><input type="number" step="0.01" wire:model="formPaid"></label>

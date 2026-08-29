@@ -125,7 +125,7 @@ class SalesIndex extends Component
             'totalInvoiced' => (string) $this->baseQuery()->sum('total_invoiced'),
             'totalReceived' => (string) $this->baseQuery()->sum('total_received'),
             'totalOutstanding' => (string) $this->baseQuery()->sum('balance'),
-            'visibleUnits' => $unitScope->visibleUnits(),
+            'scopedUnits' => $this->scopedUnits(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
         ]);

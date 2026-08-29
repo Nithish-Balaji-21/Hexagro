@@ -41,4 +41,9 @@ final class Inr
     {
         return Carbon::parse($date)->format('d M Y');
     }
+
+    public static function formatDatePicker(string $date): string
+    {
+        return Carbon::parse($date)->format('d/m/Y');
+    }
 }

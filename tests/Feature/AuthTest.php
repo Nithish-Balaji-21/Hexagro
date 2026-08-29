@@ -69,4 +69,45 @@ class AuthTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_admin_sees_switch_user_on_dashboard(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Switch user');
+    }
+
+    public function test_viewer_does_not_see_switch_user_on_dashboard(): void
+    {
+        $viewer = User::query()->where('name', 'Vikas')->firstOrFail();
+
+        $this->actingAs($viewer)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Switch user')
+            ->assertSee('Log out');
+    }
+
+    public function test_switch_user_logs_out_admin_and_returns_to_login(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('switch-user'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_viewer_cannot_use_switch_user_route(): void
+    {
+        $viewer = User::query()->where('name', 'Vikas')->firstOrFail();
+
+        $this->actingAs($viewer)
+            ->post(route('switch-user'))
+            ->assertForbidden();
+    }
 }

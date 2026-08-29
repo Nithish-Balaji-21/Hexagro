@@ -149,7 +149,7 @@
 
 @script
 <script>
-    function renderSummaryChart() {
+    window.renderSummaryChart = function() {
         const canvas = document.getElementById('chartSummary');
         if (!canvas || typeof Chart === 'undefined') return;
         const rows = JSON.parse(canvas.dataset.chart || '[]');
@@ -160,8 +160,9 @@
             data: { labels: rows.map(r => r.label), datasets: [{ data: rows.map(r => r.value), backgroundColor: ['#0B5D52','#175CD3','#B54708','#96650F','#7C3AED','#15803D','#334155','#DB2777'] }] },
             options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '58%' },
         });
-    }
-    renderSummaryChart();
-    document.addEventListener('livewire:navigated', renderSummaryChart);
+    };
+    window.renderSummaryChart();
+    document.removeEventListener('livewire:navigated', window.renderSummaryChart);
+    document.addEventListener('livewire:navigated', window.renderSummaryChart);
 </script>
 @endscript

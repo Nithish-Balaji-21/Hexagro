@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Views\EntityLedgerRaw;
+use App\Models\LedgerEntry;
 use App\Services\Dto\LedgerRow;
 use App\Support\Money;
 use Illuminate\Support\Collection;
@@ -13,14 +13,13 @@ class EntityLedgerService
      * Running Dr/Cr ledger for one funding entity.
      *
      * Running balance is recomputed in PHP so unit filters stay consistent.
-     * The SQL view `v_entity_ledger` partitions by entity across all units.
      *
      * @param  list<int>|null  $costCenterIds
      * @return Collection<int, LedgerRow>
      */
     public function rows(int $entityId, ?array $costCenterIds = null): Collection
     {
-        $rawRows = EntityLedgerRaw::query()
+        $rawRows = LedgerEntry::query()
             ->with('costCenter')
             ->where('entity_id', $entityId)
             ->when($costCenterIds !== null, fn ($query) => $query->whereIn('cost_center_id', $costCenterIds))
@@ -31,7 +30,7 @@ class EntityLedgerService
 
         $balance = Money::zero();
 
-        return $rawRows->map(function (EntityLedgerRaw $raw) use (&$balance): LedgerRow {
+        return $rawRows->map(function (LedgerEntry $raw) use (&$balance): LedgerRow {
             $signed = Money::of($raw->signed_amount);
             $balance = Money::add($balance, $signed);
             $isCredit = Money::cmp($signed, '0') > 0;

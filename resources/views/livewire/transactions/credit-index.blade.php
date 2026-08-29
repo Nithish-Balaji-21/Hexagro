@@ -5,6 +5,10 @@
     >
         @can('create', App\Models\CreditTransaction::class)
             <x-slot:actions>
+                <button type="button" wire:click="$dispatch('open-import', { kind: 'credit' })" class="hex-btn">
+                    <x-hex.icon name="upload" />
+                    Import
+                </button>
                 <button type="button" wire:click="openCreateForm" class="hex-btn hex-btn-primary">
                     <x-hex.icon name="plus" />
                     Add Credit
@@ -15,11 +19,19 @@
 
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" action="see another unit" />
 
-    <x-hex.unit-tabs :units="$visibleUnits" :active="$unitTab" />
+    <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
 
     <div class="filter-bar filter-bar-range">
         <span class="fb-label"><x-hex.icon name="calendar" /> Range</span>
-        <x-hex.range-picker :preset="$rangePreset" :from="$rangeFrom" :to="$rangeTo" />
+        <x-hex.range-picker
+            :preset="$rangePreset"
+            :from="$rangeFrom"
+            :to="$rangeTo"
+            :picker-open="$rangePickerOpen"
+            :picker-from="$pickerFrom"
+            :picker-to="$pickerTo"
+            :picker-preset="$pickerPreset"
+        />
     </div>
 
     <div class="filter-bar">
@@ -115,7 +127,7 @@
                         <label>
                             <span>Cost Center</span>
                             <select wire:model="formCostCenterId">
-                                @foreach ($visibleUnits as $unit)
+                                @foreach ($scopedUnits as $unit)
                                     <option value="{{ $unit->id }}">{{ $unit->name }}</option>
                                 @endforeach
                             </select>

@@ -1,4 +1,5 @@
 import './bootstrap';
+import './range-picker';
 import Chart from 'chart.js/auto';
 
 window.Chart = Chart;

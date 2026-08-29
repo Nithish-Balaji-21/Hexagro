@@ -36,6 +36,14 @@ class UnitScope
     }
 
     /**
+     * @return list<string>
+     */
+    public function visibleUnitNames(?User $user = null): array
+    {
+        return $this->visibleUnits($user)->pluck('name')->all();
+    }
+
+    /**
      * @return list<int>
      */
     public function visibleUnitIds(?User $user = null): array
@@ -48,11 +56,16 @@ class UnitScope
      */
     public function selectedUnitIds(?User $user = null): array
     {
-        $visibleIds = $this->visibleUnitIds($user);
+        $visibleUnits = $this->visibleUnits($user);
+        $visibleIds = $visibleUnits->pluck('id')->all();
         $selected = session(self::SESSION_KEY, $visibleIds);
 
         if (! is_array($selected)) {
             $selected = $visibleIds;
+        }
+
+        if (! empty($selected) && is_string($selected[0]) && ! is_numeric($selected[0])) {
+            $selected = $visibleUnits->whereIn('name', $selected)->pluck('id')->all();
         }
 
         $selected = array_values(array_intersect(
@@ -68,6 +81,14 @@ class UnitScope
     }
 
     /**
+     * @return list<string>
+     */
+    public function selectedUnitNames(?User $user = null): array
+    {
+        return $this->selectedUnits($user)->pluck('name')->all();
+    }
+
+    /**
      * @return Collection<int, CostCenter>
      */
     public function selectedUnits(?User $user = null): Collection
@@ -78,6 +99,22 @@ class UnitScope
             ->whereIn('id', $ids)
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * @param  list<string>  $unitNames
+     * @return list<string>
+     */
+    public function sanitizeUnitNames(array $unitNames, ?User $user = null): array
+    {
+        $visibleNames = $this->visibleUnitNames($user);
+        $sanitized = array_values(array_intersect($unitNames, $visibleNames));
+
+        if ($sanitized === []) {
+            return $visibleNames;
+        }
+
+        return $sanitized;
     }
 
     /**
@@ -96,6 +133,18 @@ class UnitScope
         }
 
         session([self::SESSION_KEY => $sanitized]);
+    }
+
+    /**
+     * @param  list<string>  $unitNames
+     */
+    public function setSelectedUnitNames(array $unitNames, ?User $user = null): void
+    {
+        $sanitizedNames = $this->sanitizeUnitNames($unitNames, $user);
+        $visibleUnits = $this->visibleUnits($user);
+        $ids = $visibleUnits->whereIn('name', $sanitizedNames)->pluck('id')->all();
+
+        $this->setSelectedUnits($ids, $user);
     }
 
     public function initializeForUser(User $user): void

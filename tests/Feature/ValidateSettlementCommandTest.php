@@ -10,12 +10,13 @@ class ValidateSettlementCommandTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_prints_ready_for_zoho_export(): void
+    public function test_reports_validation_failure_when_transactions_are_not_imported(): void
     {
         $this->seed(DatabaseSeeder::class);
 
         $this->artisan('hexagro:validate-settlement')
-            ->expectsOutput('ready for Zoho export')
-            ->assertSuccessful();
+            ->expectsOutputToContain('Fibre Unit — Jagadeesan settlement comparison')
+            ->expectsOutputToContain('FAIL')
+            ->assertFailed();
     }
 }

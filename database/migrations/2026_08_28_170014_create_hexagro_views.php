@@ -17,7 +17,7 @@ return new class extends Migration
         DB::statement('DROP VIEW IF EXISTS v_entity_ledger_raw');
 
         DB::statement("
-            CREATE VIEW v_entity_ledger_raw AS
+            CREATE OR REPLACE VIEW v_entity_ledger_raw AS
               SELECT
                 d.paid_through_entity_id AS entity_id,
                 d.txn_date,
@@ -50,7 +50,7 @@ return new class extends Migration
         ");
 
         DB::statement('
-            CREATE VIEW v_entity_ledger AS
+            CREATE OR REPLACE VIEW v_entity_ledger AS
               SELECT
                 entity_id, txn_date, cost_center_id, particulars,
                 IF(signed_amount < 0, -signed_amount, 0) AS debit,
@@ -64,7 +64,7 @@ return new class extends Migration
         ');
 
         DB::statement("
-            CREATE VIEW v_shareholder_contribution AS
+            CREATE OR REPLACE VIEW v_shareholder_contribution AS
               SELECT
                 e.id AS entity_id, e.short_name, cc.id AS cost_center_id, cc.name AS cost_center_name,
                 COALESCE(SUM(CASE WHEN d.paid_through_entity_id = e.id THEN d.amount END), 0)
@@ -78,13 +78,13 @@ return new class extends Migration
         ");
 
         DB::statement('
-            CREATE VIEW v_payables_by_unit AS
+            CREATE OR REPLACE VIEW v_payables_by_unit AS
               SELECT cost_center_id, SUM(balance) AS total_payable
               FROM purchases WHERE total_billed IS NOT NULL GROUP BY cost_center_id
         ');
 
         DB::statement('
-            CREATE VIEW v_receivables_by_unit AS
+            CREATE OR REPLACE VIEW v_receivables_by_unit AS
               SELECT cost_center_id, SUM(balance) AS total_receivable
               FROM sales GROUP BY cost_center_id
         ');

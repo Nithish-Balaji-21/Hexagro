@@ -13,12 +13,20 @@
 
     <div class="filter-bar filter-bar-range">
         <span class="fb-label"><x-hex.icon name="calendar" /> Spend range</span>
-        <x-hex.range-picker :preset="$rangePreset" :from="$rangeFrom" :to="$rangeTo" />
+        <x-hex.range-picker
+            :preset="$rangePreset"
+            :from="$rangeFrom"
+            :to="$rangeTo"
+            :picker-open="$rangePickerOpen"
+            :picker-from="$pickerFrom"
+            :picker-to="$pickerTo"
+            :picker-preset="$pickerPreset"
+        />
     </div>
 
     <p class="hint mb-4">Debit &amp; Credit cards follow the range above · Banking &amp; Outstandings are current balances.</p>
 
-    <div class="dash-card-grid">
+    <div class="dash-card-grid" wire:key="unit-scope-{{ $unitScopeVersion }}">
         <div class="card card-pad dash-mini-card">
             <div class="dmc-head">
                 <div class="kpi-icon"><x-hex.icon name="down" /></div>
@@ -45,8 +53,13 @@
                 <h3>Banking</h3>
             </div>
             <div class="dmc-row"><span>CA</span><b><x-hex.money :amount="$summary->bankCurrent" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>CC</span><b><x-hex.money :amount="$summary->bankCcUtilised" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>TL</span><b><x-hex.money :amount="$summary->bankTermLoan" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>CC limit</span><b><x-hex.money :amount="$summary->bankCcLimit" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>CC utilised</span><b><x-hex.money :amount="$summary->bankCcUtilised" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>TL limit</span><b><x-hex.money :amount="$summary->bankTlLimit" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>TL outstanding</span><b><x-hex.money :amount="$summary->bankTermLoan" :decimals="2" /></b></div>
+            @if (! $allSelected)
+                <p class="hint mt-2">Company-wide snapshot — not unit-specific.</p>
+            @endif
         </div>
 
         <div class="card card-pad dash-mini-card">
@@ -58,7 +71,7 @@
             <div class="dmc-row"><span>Receivables</span><b class="rec"><x-hex.money :amount="$summary->receivables" :decimals="2" /></b></div>
         </div>
 
-        <div class="card card-pad dash-mini-card dash-chart-card" wire:ignore>
+        <div class="card card-pad dash-mini-card dash-chart-card" wire:key="share-fair-chart-{{ md5(json_encode($chartData)) }}">
             <div class="dmc-head">
                 <div class="kpi-icon"><x-hex.icon name="layers" /></div>
                 <h3>Shareholder Contribution vs Fair Share</h3>
@@ -68,14 +81,30 @@
                     <canvas id="chartShareFair" data-chart='@json($chartData)'></canvas>
                 </div>
             </div>
-            <p class="hint mt-2">Solid = contribution so far · hatched = still owed to reach fair share@if (! $allSelected) · {{ $scopeLabel }}@endif</p>
+            <p class="hint mt-2">Green = contribution · amber = over fair share · hatched = still owed @if (! $allSelected) · {{ $scopeLabel }}@endif</p>
         </div>
     </div>
 </div>
 
 @script
 <script>
-    function renderShareFairChart() {
+    window.hatchPattern = function(color) {
+        const c = document.createElement('canvas');
+        c.width = 8;
+        c.height = 8;
+        const ctx = c.getContext('2d');
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.6;
+        [[-2, 10, 2, -2], [2, 10, 6, -2], [6, 10, 10, 2]].forEach(([x1, y1, x2, y2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        });
+        return ctx.createPattern(c, 'repeat');
+    };
+
+    window.renderShareFairChart = function() {
         const canvas = document.getElementById('chartShareFair');
         if (!canvas || typeof Chart === 'undefined') return;
 
@@ -96,8 +125,8 @@
                 labels: data.labels || [],
                 datasets: [
                     { label: 'Contribution', data: base, backgroundColor: '#0B5D52', stack: 's', maxBarThickness: 56 },
-                    { label: 'Over fair share', data: over, backgroundColor: '#0B5D52', stack: 's', maxBarThickness: 56 },
-                    { label: 'Still owed', data: gap, backgroundColor: '#96650F55', borderColor: '#96650F', borderWidth: 1.5, stack: 's', maxBarThickness: 56 },
+                    { label: 'Over fair share', data: over, backgroundColor: '#D97706', stack: 's', maxBarThickness: 56 },
+                    { label: 'Still owed', data: gap, backgroundColor: window.hatchPattern('#96650F'), borderColor: '#96650F', borderWidth: 1.5, stack: 's', maxBarThickness: 56 },
                 ],
             },
             options: {
@@ -110,9 +139,15 @@
                 },
             },
         });
-    }
+    };
 
-    renderShareFairChart();
-    document.addEventListener('livewire:navigated', renderShareFairChart);
+    window.renderShareFairChart();
+    document.removeEventListener('livewire:navigated', window.renderShareFairChart);
+    document.addEventListener('livewire:navigated', window.renderShareFairChart);
+    Livewire.hook('morph.updated', () => {
+        if (document.getElementById('chartShareFair')) {
+            window.renderShareFairChart();
+        }
+    });
 </script>
 @endscript

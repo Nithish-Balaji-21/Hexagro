@@ -40,4 +40,15 @@ return [
 
     'suggested_transfer_threshold' => 0.5,
 
+    'outstanding_party_kinds' => [
+        'Sakthi Mariamman' => 'receivable',
+        'HP Cocos' => 'payable',
+        'Rhythm Fibres' => 'receivable',
+        'Vellingiri Field Work' => 'payable',
+        'Naveen Periyakalanthai' => 'receivable',
+        'Alam Cocos' => 'payable',
+        'Naveen Electricals' => 'payable',
+        'Rithvik Pipe Company' => 'payable',
+    ],
+
 ];

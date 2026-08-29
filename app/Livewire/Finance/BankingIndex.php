@@ -27,6 +27,8 @@ class BankingIndex extends Component
 
     public string $formTermLoan = '';
 
+    public string $formTlLimit = '';
+
     public string $formAlamUtilised = '';
 
     public function mount(BankingService $bankingService): void
@@ -40,9 +42,11 @@ class BankingIndex extends Component
             $this->formCcLimit = (string) $s->cc_limit;
             $this->formCcUtilised = (string) $s->cc_utilised;
             $this->formTermLoan = (string) $s->term_loan;
+            $this->formTlLimit = (string) $s->tl_limit;
             $this->formAlamUtilised = (string) $s->alam_utilised;
         } else {
             $this->formAsOf = now()->toDateString();
+            $this->formTlLimit = '13500000';
         }
     }
 
@@ -62,6 +66,7 @@ class BankingIndex extends Component
             'formCcLimit' => ['required', 'numeric', 'min:0'],
             'formCcUtilised' => ['required', 'numeric', 'min:0'],
             'formTermLoan' => ['required', 'numeric', 'min:0'],
+            'formTlLimit' => ['required', 'numeric', 'min:0'],
             'formAlamUtilised' => ['required', 'numeric'],
         ]);
 
@@ -71,6 +76,7 @@ class BankingIndex extends Component
             'cc_limit' => $validated['formCcLimit'],
             'cc_utilised' => $validated['formCcUtilised'],
             'term_loan' => $validated['formTermLoan'],
+            'tl_limit' => $validated['formTlLimit'],
             'alam_utilised' => $validated['formAlamUtilised'],
             'created_by' => auth()->id(),
         ]);

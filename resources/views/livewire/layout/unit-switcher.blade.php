@@ -5,19 +5,25 @@
         </span>
     </div>
 @else
-    <div class="unit-switch multi" title="Select one or more units">
+    <div class="unit-switch multi" title="Select a unit or view all">
         <button
             type="button"
             wire:click="selectAll"
             class="unit-pill {{ $this->isAllSelected() ? 'active' : '' }}"
+            aria-pressed="{{ $this->isAllSelected() ? 'true' : 'false' }}"
         >
+            <span class="pill-check {{ $this->isAllSelected() ? 'checked' : '' }}">
+                @if ($this->isAllSelected())
+                    <x-hex.icon name="check" class="w-[9px] h-[9px]" />
+                @endif
+            </span>
             <x-hex.icon name="grid" />
             <span>All Units</span>
         </button>
 
         @foreach ($visibleUnits as $unit)
             @php
-                $selected = in_array($unit->id, $selectedIds, true);
+                $selected = $this->isUnitSelected($unit->name);
                 $dotClass = match ($unit->name) {
                     'Fibre Unit' => 'unit-fibre',
                     'Chips Unit' => 'unit-chips',
@@ -27,7 +33,7 @@
             @endphp
             <button
                 type="button"
-                wire:click="toggleUnit({{ $unit->id }})"
+                wire:click="toggleUnit('{{ $unit->name }}')"
                 class="unit-pill {{ $selected ? 'active' : '' }}"
                 aria-pressed="{{ $selected ? 'true' : 'false' }}"
             >

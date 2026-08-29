@@ -44,10 +44,27 @@ class SettlementIndex extends Component
     public function mount(UnitScope $unitScope): void
     {
         $this->ledgerDate = now()->toDateString();
-        $first = $unitScope->visibleUnits()->first();
+        $first = $unitScope->selectedUnits()->first();
 
         if ($first) {
-            $this->selectedTab = (string) $first->id;
+            $this->selectedTab = $unitScope->isAllSelected()
+                ? 'overall'
+                : (string) $first->id;
+        }
+    }
+
+    protected function syncUnitFilters(): void
+    {
+        $unitScope = app(UnitScope::class);
+        $unitIds = $this->scopedUnitIds();
+        $allSelected = $unitScope->isAllSelected();
+
+        if ($allSelected) {
+            if (! in_array($this->selectedTab, ['overall', ...array_map('strval', $unitIds)], true)) {
+                $this->selectedTab = 'overall';
+            }
+        } elseif ($this->selectedTab === 'overall' || ! in_array((int) $this->selectedTab, $unitIds, true)) {
+            $this->selectedTab = (string) ($unitIds[0] ?? '');
         }
     }
 
@@ -111,17 +128,8 @@ class SettlementIndex extends Component
         FundingBreakdownService $fundingBreakdownService,
         UnitScope $unitScope,
     ) {
-        $visibleUnits = $unitScope->visibleUnits();
         $unitIds = $this->scopedUnitIds();
         $allSelected = $unitScope->isAllSelected();
-
-        if ($allSelected && ! in_array($this->selectedTab, ['overall', ...array_map('strval', $unitIds)], true)) {
-            $this->selectedTab = (string) ($unitIds[0] ?? 'overall');
-        }
-
-        if (! $allSelected && $this->selectedTab === 'overall') {
-            $this->selectedTab = (string) ($unitIds[0] ?? '');
-        }
 
         $isOverall = $this->selectedTab === 'overall';
 
@@ -150,7 +158,6 @@ class SettlementIndex extends Component
         $shareholders = Entity::query()->shareholders()->orderBy('name')->get();
 
         return view('livewire.reports.settlement-index', [
-            'visibleUnits' => $visibleUnits,
             'scopedUnits' => CostCenter::query()->whereIn('id', $unitIds)->orderBy('name')->get(),
             'allSelected' => $allSelected,
             'isOverall' => $isOverall,

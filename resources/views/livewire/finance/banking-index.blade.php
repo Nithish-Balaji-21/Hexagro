@@ -27,6 +27,7 @@
             </div>
             <div class="bank-card">
                 <h4>Union Bank — Term Loan</h4>
+                <div class="bank-line"><span>TL limit</span><b><x-hex.money :amount="$s->tl_limit" :decimals="2" /></b></div>
                 <div class="bank-line"><span>Outstanding</span><b><x-hex.money :amount="$s->term_loan" :decimals="2" /></b></div>
             </div>
             <div class="bank-card">
@@ -47,7 +48,8 @@
                 <label><span>Current balance</span><input type="number" step="0.01" wire:model="formCurrent"></label>
                 <label><span>CC limit</span><input type="number" step="0.01" wire:model="formCcLimit"></label>
                 <label><span>CC utilised</span><input type="number" step="0.01" wire:model="formCcUtilised"></label>
-                <label><span>Term loan</span><input type="number" step="0.01" wire:model="formTermLoan"></label>
+                <label><span>Term loan outstanding</span><input type="number" step="0.01" wire:model="formTermLoan"></label>
+                <label><span>TL limit</span><input type="number" step="0.01" wire:model="formTlLimit"></label>
                 <label><span>Alam utilised</span><input type="number" step="0.01" wire:model="formAlamUtilised"></label>
             </div><div class="modal-foot"><button type="button" wire:click="closeForm" class="hex-btn">Cancel</button><button type="submit" class="hex-btn hex-btn-primary">Save</button></div></form>
         </div></div>

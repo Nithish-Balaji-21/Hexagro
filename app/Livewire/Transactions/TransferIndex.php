@@ -3,6 +3,7 @@
 namespace App\Livewire\Transactions;
 
 use App\Livewire\Concerns\WithUnitScopeRefresh;
+use App\Models\CostCenter;
 use App\Models\Entity;
 use App\Models\Transfer;
 use App\Support\Money;
@@ -164,7 +165,7 @@ class TransferIndex extends Component
             'transfers' => $this->transfers(),
             'totalAmount' => (string) $this->baseQuery()->sum('amount'),
             'entityNets' => $this->entityNetBalances($unitIds),
-            'visibleUnits' => $unitScope->visibleUnits(),
+            'scopedUnits' => $this->scopedUnits(),
             'entities' => Entity::query()->active()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
@@ -234,7 +235,7 @@ class TransferIndex extends Component
     {
         $this->editingId = null;
         $this->formDate = now()->toDateString();
-        $this->formCostCenterId = (string) (\App\Models\CostCenter::query()->orderBy('name')->value('id') ?? '');
+        $this->formCostCenterId = (string) (CostCenter::query()->orderBy('name')->value('id') ?? '');
         $entities = Entity::query()->active()->orderBy('name')->get();
         $this->formFromId = (string) ($entities->first()?->id ?? '');
         $this->formToId = (string) ($entities->skip(1)->first()?->id ?? '');

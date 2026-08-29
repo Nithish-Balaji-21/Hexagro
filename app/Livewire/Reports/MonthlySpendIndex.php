@@ -3,7 +3,6 @@
 namespace App\Livewire\Reports;
 
 use App\Livewire\Concerns\WithUnitScopeRefresh;
-use App\Models\CostCenter;
 use App\Services\MonthlySpendService;
 use App\Support\FiscalYear;
 use App\Support\Money;
@@ -51,7 +50,7 @@ class MonthlySpendIndex extends Component
             'totalRaw' => $totalRaw,
             'totalAll' => $totalAll,
             'months' => FiscalYear::months(),
-            'visibleUnits' => $unitScope->visibleUnits(),
+            'scopedUnits' => $this->scopedUnits(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
             'chartLabels' => collect($chartLabels)->pluck('label')->map(fn (string $l): string => explode(' ', $l)[0])->all(),
