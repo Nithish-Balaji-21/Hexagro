@@ -110,9 +110,7 @@
                 </div>
 
                 <div class="topbar-right">
-                    @persist('unit-switcher')
-                        <livewire:layout.unit-switcher />
-                    @endpersist
+                    <livewire:layout.unit-switcher />
 
                     <div class="relative">
                         <button

@@ -5,48 +5,59 @@ namespace App\Livewire\Layout;
 use App\Models\CostCenter;
 use App\Support\UnitScope;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class UnitSwitcher extends Component
 {
-    /** @var Collection<int, CostCenter> */
-    public Collection $visibleUnits;
-
     /** @var list<string> */
     public array $selectedUnits = [];
 
     /** @var list<int> */
     public array $selectedIds = [];
 
-    public bool $locked = false;
-
     public function mount(UnitScope $unitScope): void
     {
-        $this->visibleUnits = $unitScope->visibleUnits();
         $this->refreshSelection($unitScope);
-        $this->locked = $this->visibleUnits->count() <= 1;
+    }
+
+    /**
+     * @return Collection<int, CostCenter>
+     */
+    #[Computed]
+    public function visibleUnits(): Collection
+    {
+        return app(UnitScope::class)->visibleUnits();
+    }
+
+    #[Computed]
+    public function locked(): bool
+    {
+        return $this->visibleUnits()->count() <= 1;
     }
 
     public function selectAll(UnitScope $unitScope): void
     {
-        if ($this->locked || $this->visibleUnits->count() < 2) {
+        if ($this->locked() || $this->visibleUnits()->count() < 2) {
             return;
         }
 
-        $unitScope->setSelectedUnitNames($this->visibleUnits->pluck('name')->all());
+        $unitScope->setSelectedUnitNames($this->visibleUnits()->pluck('name')->all());
         $this->refreshSelection($unitScope);
         $this->dispatchEvents();
     }
 
     public function toggleUnit(string|int $unit, UnitScope $unitScope): void
     {
-        if ($this->locked) {
+        if ($this->locked()) {
             return;
         }
 
+        $visibleUnits = $this->visibleUnits();
+
         $targetUnit = is_numeric($unit)
-            ? $this->visibleUnits->firstWhere('id', (int) $unit)
-            : $this->visibleUnits->firstWhere('name', (string) $unit);
+            ? $visibleUnits->firstWhere('id', (int) $unit)
+            : $visibleUnits->firstWhere('name', (string) $unit);
 
         if (! $targetUnit) {
             return;
@@ -78,7 +89,7 @@ class UnitSwitcher extends Component
 
     public function isAllSelected(): bool
     {
-        return count($this->selectedUnits) === $this->visibleUnits->count();
+        return count($this->selectedUnits) === $this->visibleUnits()->count();
     }
 
     public function isUnitSelected(string|int $unit): bool
@@ -98,11 +109,23 @@ class UnitSwitcher extends Component
 
     private function dispatchEvents(): void
     {
-        $this->dispatch('units-selection-changed');
+        $payload = [
+            'selectedUnits' => $this->selectedUnits,
+            'selectedIds' => $this->selectedIds,
+        ];
+
+        $this->dispatch('UnitsSelectionChanged', ...$payload);
+        $this->dispatch('units-changed', ...$payload);
+        $this->dispatch('unitsChanged', ...$payload);
+        $this->dispatch('units-selection-changed', ...$payload);
     }
 
     public function render()
     {
-        return view('livewire.layout.unit-switcher');
+        return view('livewire.layout.unit-switcher', [
+            'visibleUnits' => $this->visibleUnits(),
+            'locked' => $this->locked(),
+            'allSelected' => $this->isAllSelected(),
+        ]);
     }
 }

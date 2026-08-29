@@ -9,21 +9,16 @@
         <button
             type="button"
             wire:click="selectAll"
-            class="unit-pill {{ $this->isAllSelected() ? 'active' : '' }}"
-            aria-pressed="{{ $this->isAllSelected() ? 'true' : 'false' }}"
+            class="unit-pill {{ $allSelected ? 'active' : '' }}"
+            aria-pressed="{{ $allSelected ? 'true' : 'false' }}"
         >
-            <span class="pill-check {{ $this->isAllSelected() ? 'checked' : '' }}">
-                @if ($this->isAllSelected())
-                    <x-hex.icon name="check" class="w-[9px] h-[9px]" />
-                @endif
-            </span>
             <x-hex.icon name="grid" />
             <span>All Units</span>
         </button>
 
         @foreach ($visibleUnits as $unit)
             @php
-                $selected = $this->isUnitSelected($unit->name);
+                $selected = in_array($unit->name, $selectedUnits, true) || in_array($unit->id, $selectedIds, true);
                 $dotClass = match ($unit->name) {
                     'Fibre Unit' => 'unit-fibre',
                     'Chips Unit' => 'unit-chips',

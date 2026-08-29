@@ -11,6 +11,9 @@ trait WithUnitScopeRefresh
 {
     public int $unitScopeVersion = 0;
 
+    #[On('UnitsSelectionChanged')]
+    #[On('units-changed')]
+    #[On('unitsChanged')]
     #[On('units-selection-changed')]
     public function refreshUnitScope(): void
     {
