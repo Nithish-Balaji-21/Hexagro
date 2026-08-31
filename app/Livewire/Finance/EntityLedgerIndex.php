@@ -24,11 +24,25 @@ class EntityLedgerIndex extends Component
 
     public function mount(): void
     {
-        $this->selectedEntityId = (string) (Entity::ledgerBookEntities()->first()?->id ?? '');
+        $user = auth()->user();
+        $allowedNames = $this->getAllowedLedgerEntities($user);
+        $firstAllowedEntity = Entity::ledgerBookEntities()
+            ->filter(fn (Entity $entity) => in_array($entity->name, $allowedNames, true))
+            ->first();
+
+        $this->selectedEntityId = (string) ($firstAllowedEntity?->id ?? '');
     }
 
     public function setEntity(int $entityId): void
     {
+        $user = auth()->user();
+        $allowedNames = $this->getAllowedLedgerEntities($user);
+        $entity = Entity::query()->findOrFail($entityId);
+
+        if (! in_array($entity->name, $allowedNames, true)) {
+            abort(403, 'Unauthorized.');
+        }
+
         $this->selectedEntityId = (string) $entityId;
     }
 
@@ -41,6 +55,13 @@ class EntityLedgerIndex extends Component
         }
 
         $entity = Entity::query()->findOrFail($entityId);
+        $user = auth()->user();
+        $allowedNames = $this->getAllowedLedgerEntities($user);
+
+        if (! in_array($entity->name, $allowedNames, true)) {
+            abort(403, 'Unauthorized.');
+        }
+
         $range = $this->dateRange();
         $unitIds = $this->scopedUnitIds();
         $rows = $ledgerService->rows($entityId, $unitIds, $range);
@@ -72,7 +93,21 @@ class EntityLedgerIndex extends Component
 
     public function render(EntityLedgerService $ledgerService, UnitScope $unitScope)
     {
+        $user = auth()->user();
+        $allowedNames = $this->getAllowedLedgerEntities($user);
+
+        $entities = Entity::ledgerBookEntities()
+            ->filter(fn (Entity $entity) => in_array($entity->name, $allowedNames, true))
+            ->keyBy('name');
+
         $entityId = (int) $this->selectedEntityId;
+        $selectedEntity = $entityId > 0 ? Entity::query()->find($entityId) : null;
+
+        if ($selectedEntity && ! in_array($selectedEntity->name, $allowedNames, true)) {
+            $selectedEntity = null;
+            $entityId = 0;
+        }
+
         $range = $this->dateRange();
         $unitIds = $this->scopedUnitIds();
         $rows = $entityId > 0
@@ -88,11 +123,9 @@ class EntityLedgerIndex extends Component
             ? $ledgerService->closingBalance($entityId, $unitIds, $range)
             : Money::zero();
 
-        $selectedEntity = $entityId > 0 ? Entity::query()->find($entityId) : null;
-
         return view('livewire.finance.entity-ledger-index', [
             'entityGroups' => Entity::ledgerBookGroups(),
-            'entities' => Entity::ledgerBookEntities()->keyBy('name'),
+            'entities' => $entities,
             'selectedEntity' => $selectedEntity,
             'rows' => $rows,
             'openingBalance' => $openingBalance,
@@ -102,5 +135,45 @@ class EntityLedgerIndex extends Component
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
         ]);
+    }
+
+    private function getAllowedLedgerEntities(\App\Models\User $user): array
+    {
+        if ($user->isAdmin()) {
+            return [
+                'Shareholder - Jagadeesan',
+                'Shareholder - Jagadeshwaran',
+                'Shareholder - Vellingiri',
+                'Vikas',
+                'Payable to Alam',
+                'Union Bank - CC',
+                'Union Bank - Current',
+                'Union Bank - Term Loan',
+            ];
+        }
+
+        if ($user->configKey() === 'vikas') {
+            return ['Vikas'];
+        }
+
+        $ownEntityName = match ($user->name) {
+            'Jagadeesan' => 'Shareholder - Jagadeesan',
+            'Jagadeshwaran' => 'Shareholder - Jagadeshwaran',
+            'Vellingiri' => 'Shareholder - Vellingiri',
+            'Vikas' => 'Vikas',
+            default => null,
+        };
+
+        $allowed = [];
+        if ($ownEntityName) {
+            $allowed[] = $ownEntityName;
+        }
+
+        // Add bank accounts
+        $allowed[] = 'Union Bank - CC';
+        $allowed[] = 'Union Bank - Current';
+        $allowed[] = 'Union Bank - Term Loan';
+
+        return $allowed;
     }
 }

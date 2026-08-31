@@ -1,23 +1,33 @@
 @php
+    $isVikas = auth()->user()->configKey() === 'vikas';
+    $isAdmin = auth()->user()->isAdmin();
+
+    $transactionItems = [
+        ['id' => 'debit', 'label' => 'Debit', 'route' => 'debit', 'icon' => 'down'],
+        ['id' => 'credit', 'label' => 'Credit', 'route' => 'credit', 'icon' => 'up'],
+        ['id' => 'transfers', 'label' => 'Transfers', 'route' => 'transfers', 'icon' => 'transfer'],
+    ];
+
+    if (!$isVikas) {
+        $transactionItems[] = ['id' => 'banking', 'label' => 'Banking', 'route' => 'banking', 'icon' => 'bank'];
+    }
+
+    $financeItems = [
+        ['id' => 'entityLedgers', 'label' => 'Ledger Book', 'route' => 'ledger-book', 'icon' => 'history'],
+    ];
+
     $navSections = [
         'Overview' => [
             ['id' => 'dashboard', 'label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'grid'],
         ],
-        'Transactions' => [
-            ['id' => 'debit', 'label' => 'Debit', 'route' => 'debit', 'icon' => 'down'],
-            ['id' => 'credit', 'label' => 'Credit', 'route' => 'credit', 'icon' => 'up'],
-            ['id' => 'transfers', 'label' => 'Transfers', 'route' => 'transfers', 'icon' => 'scale'],
-        ],
+        'Transactions' => $transactionItems,
         'Reports' => [
             ['id' => 'monthlySpend', 'label' => 'Monthly Spend', 'route' => 'monthly-spend', 'icon' => 'calendar'],
-            ['id' => 'settlement', 'label' => 'Summary & Settlement', 'route' => 'settlement', 'icon' => 'scale'],
+            ['id' => 'settlement', 'label' => 'Summary & Settlement', 'route' => 'settlement', 'icon' => 'settlement'],
             ['id' => 'purchases', 'label' => 'Purchases', 'route' => 'purchases', 'icon' => 'down'],
             ['id' => 'sales', 'label' => 'Sales', 'route' => 'sales', 'icon' => 'trend'],
         ],
-        'Finance' => [
-            ['id' => 'banking', 'label' => 'Banking', 'route' => 'banking', 'icon' => 'bank'],
-            ['id' => 'entityLedgers', 'label' => 'Ledger Book', 'route' => 'ledger-book', 'icon' => 'history'],
-        ],
+        'Finance' => $financeItems,
     ];
 
     $currentPage = $currentPage ?? 'dashboard';

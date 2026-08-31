@@ -2,14 +2,12 @@
     <x-hex.page-head title="Banking" :subtitle="$position ? 'As of '.$position->snapshot->as_of_date->format('d M Y') : 'No snapshot recorded'">
         @can('create', App\Models\BankingSnapshot::class)
             <x-slot:actions>
-                <button type="button" wire:click="openEditForm" class="hex-btn hex-btn-primary"><x-hex.icon name="edit" /> {{ $position ? 'Update Snapshot' : 'Add Snapshot' }}</button>
+                <button type="button" wire:click="openCreateForm" class="hex-btn hex-btn-primary">
+                    <x-hex.icon name="plus" /> New
+                </button>
             </x-slot:actions>
         @endcan
     </x-hex.page-head>
-
-    <x-hex.explain-card title="Accounts (3)">
-        The business runs on three Union Bank accounts — Current, Cash Credit and Term Loan — plus Alam Cocos, computed from Payable to Alam transactions in the <a href="{{ route('ledger-book') }}" wire:navigate style="color: inherit; font-weight: 600;">Ledger Book</a>.
-    </x-hex.explain-card>
 
     @if ($position)
         @php $s = $position->snapshot; $ccPct = $s->cc_limit > 0 ? round(((float)$s->cc_utilised / (float)$s->cc_limit) * 100) : 0; @endphp
@@ -30,15 +28,68 @@
                 <div class="bank-line"><span>TL limit</span><b><x-hex.money :amount="$s->tl_limit" /></b></div>
                 <div class="bank-line"><span>Outstanding</span><b><x-hex.money :amount="$s->term_loan" /></b></div>
             </div>
-            <div class="bank-card">
-                <h4>Alam Cocos (non-bank) <span style="font-weight:400;color:var(--text-3);">· computed from transactions</span></h4>
-                <div class="bank-line"><span>Alam funds utilised</span><b><x-hex.money :amount="$position->alamUtilised" /></b></div>
-                <div class="bank-line"><span>Payable to Alam</span><b class="pay"><x-hex.money :amount="$position->alamPayable" /></b></div>
-            </div>
         </div>
     @else
         <x-hex.empty-state title="No banking snapshot" description="An admin can record the first snapshot." />
     @endif
+
+    <div class="card mt-6">
+        <div class="card-head">
+            <h3>Banking Snapshot History</h3>
+        </div>
+        <div class="table-scroll">
+            @if ($snapshots->count())
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>As of Date</th>
+                            <th class="num">Current Balance</th>
+                            <th class="num">CC Utilised</th>
+                            <th class="num">CC Limit</th>
+                            <th class="num">Term Loan Outstanding</th>
+                            <th class="num">TL Limit</th>
+                            <th>Created By</th>
+                            @can('create', App\Models\BankingSnapshot::class)
+                                <th class="num">Actions</th>
+                            @endcan
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($snapshots as $snap)
+                            <tr wire:key="snap-{{ $snap->id }}">
+                                <td class="mono font-semibold">{{ $snap->as_of_date->format('d M Y') }}</td>
+                                <td class="num amt"><x-hex.money :amount="$snap->current_balance" /></td>
+                                <td class="num amt"><x-hex.money :amount="$snap->cc_utilised" /></td>
+                                <td class="num amt"><x-hex.money :amount="$snap->cc_limit" /></td>
+                                <td class="num amt"><x-hex.money :amount="$snap->term_loan" /></td>
+                                <td class="num amt"><x-hex.money :amount="$snap->tl_limit" /></td>
+                                <td>{{ $snap->createdBy->name ?? '—' }}</td>
+                                @can('create', App\Models\BankingSnapshot::class)
+                                    <td class="num">
+                                        <div class="row-actions">
+                                            <button type="button" wire:click="openEditForm({{ $snap->id }})" class="tbl-icon-btn" title="Edit">
+                                                <x-hex.icon name="edit" />
+                                            </button>
+                                            <button type="button" wire:click="delete({{ $snap->id }})" wire:confirm="Delete this banking snapshot?" class="tbl-icon-btn danger" title="Delete">
+                                                <x-hex.icon name="trash" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                @endcan
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <x-hex.empty-state title="No banking history" description="No snapshot logs recorded yet." />
+            @endif
+        </div>
+        @if ($snapshots->count())
+            <div class="px-4 pb-4 mt-4">{{ $snapshots->links() }}</div>
+        @endif
+    </div>
+
+
 
     @if ($showForm)
         <div class="modal-overlay show">

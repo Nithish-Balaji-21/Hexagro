@@ -1,7 +1,10 @@
 <div>
-    <x-hex.page-head title="Transfers" subtitle="Money moved between shareholders, Alam and bank accounts">
+    <x-hex.page-head title="Transfers" subtitle="Money moved between bank accounts">
         @can('create', App\Models\Transfer::class)
             <x-slot:actions>
+                <a href="{{ route('import', ['kind' => 'transfers']) }}" wire:navigate class="hex-btn icon-only" title="Import history / Revert">
+                    <x-hex.icon name="history" />
+                </a>
                 <button type="button" wire:click="$dispatch('open-import', { kind: 'transfers' })" class="hex-btn">
                     <x-hex.icon name="upload" />
                     Import

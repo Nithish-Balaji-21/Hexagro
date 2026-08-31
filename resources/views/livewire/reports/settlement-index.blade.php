@@ -1,11 +1,6 @@
 <div>
     <x-hex.page-head title="Summary & Settlement" subtitle="Funding breakdown and shareholder reconciliation" />
 
-    <x-hex.explain-card title="How to read this page">
-        Settlement compares each shareholder's effective contribution against their fair share based on ownership.
-        Positive outstanding means they should receive money back; negative means they owe.
-    </x-hex.explain-card>
-
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" action="see another unit or overall position" />
 
     <div class="tabs mb-4">

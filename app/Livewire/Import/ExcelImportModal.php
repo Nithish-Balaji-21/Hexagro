@@ -36,32 +36,7 @@ class ExcelImportModal extends Component
 
     public $workbook;
 
-    #[Computed]
-    public function lastImportRun(): ?ImportRun
-    {
-        if (! in_array($this->kind, ['debit', 'credit', 'transfers'], true)) {
-            return null;
-        }
 
-        return app(ImportRunService::class)->latestForKind($this->kind);
-    }
-
-    public function revertLastImport(ImportRunService $importRunService): void
-    {
-        $this->authorize('create', DebitTransaction::class);
-
-        $run = $this->lastImportRun();
-
-        if ($run === null) {
-            $this->dispatch('toast', message: 'No import to revert.');
-
-            return;
-        }
-
-        $deleted = $importRunService->revert($run);
-        $this->dispatch('toast', message: "Reverted last import — {$deleted} row(s) removed.");
-        $this->dispatch('import-completed');
-    }
 
     public function mount(bool $showOnLoad = false, string $kind = 'workbook'): void
     {
@@ -122,6 +97,8 @@ class ExcelImportModal extends Component
                         'amount' => $row->amount,
                         'valid' => $row->valid,
                         'error' => $row->error,
+                        'skipped' => $row->skipped ?? false,
+                        'skipReason' => $row->skipReason ?? null,
                     ],
                     $result->rows,
                 ),
@@ -195,7 +172,14 @@ class ExcelImportModal extends Component
     public function validCount(): int
     {
         return collect($this->previewResults)->sum(
-            fn (array $result): int => count(array_filter($result['rows'], fn (array $row): bool => $row['valid'])),
+            fn (array $result): int => count(array_filter($result['rows'], fn (array $row): bool => $row['valid'] && !($row['skipped'] ?? false))),
+        );
+    }
+
+    public function skippedCount(): int
+    {
+        return collect($this->previewResults)->sum(
+            fn (array $result): int => count(array_filter($result['rows'], fn (array $row): bool => $row['skipped'] ?? false)),
         );
     }
 

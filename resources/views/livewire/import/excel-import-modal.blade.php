@@ -10,17 +10,7 @@
                             <x-hex.icon name="download" />
                         </a>
                     @endif
-                    @if ($this->lastImportRun)
-                        <button
-                            type="button"
-                            wire:click="revertLastImport"
-                            wire:confirm="Revert import of {{ $this->lastImportRun->filename }} ({{ $this->lastImportRun->row_count }} rows)? This cannot be undone."
-                            class="tbl-icon-btn danger"
-                            title="Revert last import ({{ $this->lastImportRun->filename }})"
-                        >
-                            <x-hex.icon name="revert" />
-                        </button>
-                    @endif
+
                     <button type="button" wire:click="close" class="tbl-icon-btn" title="Close"><x-hex.icon name="x" /></button>
                 </div>
             </div>
@@ -78,7 +68,7 @@
                 @endif
 
                 @if ($step === 2)
-                    <div class="import-stats">
+                    <div class="import-stats" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                         <div class="import-stat ok">
                             <b>{{ $this->validCount() }}</b>
                             <span>Valid rows</span>
@@ -86,6 +76,10 @@
                         <div class="import-stat err">
                             <b>{{ $this->errorCount() }}</b>
                             <span>Rows with errors</span>
+                        </div>
+                        <div class="import-stat" style="background:#fffbeb; border:1px solid #fde68a; color:#d97706; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.25rem 1rem; border-radius:8px; text-align:center; cursor:help;" title="Transfer fund rows are not allowed in {{ ucfirst($this->kind) }}, so they are skipped. They will be imported via Transfers instead.">
+                            <b style="display:block; font-size:24px; font-weight:700; line-height:1; margin-bottom:0.25rem;">{{ $this->skippedCount() }}</b>
+                            <span style="font-size:12px; font-weight:500; opacity:0.9;">Skipped rows</span>
                         </div>
                     </div>
 
@@ -108,14 +102,16 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($sheetResult['rows'] as $row)
-                                            <tr @if(! $row['valid']) style="background:var(--pay-tint)" @endif>
+                                            <tr @if(! $row['valid']) style="background:var(--pay-tint)" @elseif($row['skipped'] ?? false) style="background:#fffdf5" @endif>
                                                 <td class="mono">{{ $row['rowNumber'] ?: '—' }}</td>
                                                 <td class="mono">{{ $row['date'] ?: '—' }}</td>
                                                 <td>{{ $row['costCenter'] ?: '—' }}</td>
                                                 <td>{{ $row['detail'] ?: '—' }}</td>
                                                 <td class="num amt">{{ $row['amount'] ?: '—' }}</td>
                                                 <td>
-                                                    @if ($row['valid'])
+                                                    @if ($row['skipped'] ?? false)
+                                                        <span class="status-badge pending" style="background:#fef3c7;color:#d97706;" title="{{ $row['skipReason'] ?? '' }}">Skipped</span>
+                                                    @elseif ($row['valid'])
                                                         <span class="status-badge pending" style="background:var(--receive-tint);color:var(--receive);">Valid</span>
                                                     @else
                                                         <span class="status-badge open">Error</span>
@@ -136,6 +132,19 @@
                                                 <span>{{ $row['error'] }}</span>
                                             </div>
                                         @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @php $sheetSkipped = collect($sheetResult['rows'])->filter(fn($r) => $r['skipped'] ?? false); @endphp
+                            @if ($sheetSkipped->isNotEmpty())
+                                <div class="info-list mb-4" style="background: #fffbeb; border: 1px solid #fde68a; padding: 0.75rem; border-radius: 6px; font-size: 13px;">
+                                    <div style="font-weight: 600; color: #b45309; margin-bottom: 0.5rem; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Information / Skipped Rows</div>
+                                    @foreach ($sheetSkipped as $row)
+                                        <div class="info-row" style="margin-bottom: 0.25rem;">
+                                            <strong style="color: #b45309;">Row {{ $row['rowNumber'] ?: '?' }}:</strong>
+                                            <span style="color: #78350f;">{{ $row['skipReason'] ?? '' }}</span>
+                                        </div>
                                     @endforeach
                                 </div>
                             @endif
@@ -162,16 +171,12 @@
                 @endif
 
                 @if ($step === 2)
-                    <label class="import-skip-label">
-                        <input type="checkbox" wire:model="skipErrors">
-                        Skip {{ $this->errorCount() }} error row{{ $this->errorCount() === 1 ? '' : 's' }} and import the rest
-                    </label>
                     <button
                         type="button"
                         wire:click="confirmImport"
                         wire:loading.attr="disabled"
                         class="hex-btn hex-btn-primary"
-                        @disabled($this->validCount() === 0)
+                        @disabled($this->validCount() === 0 || $this->errorCount() > 0)
                     >
                         <x-hex.icon name="check" />
                         Confirm Import ({{ $this->validCount() }} rows)

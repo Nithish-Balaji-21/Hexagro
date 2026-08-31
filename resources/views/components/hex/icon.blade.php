@@ -30,6 +30,8 @@
         'download' => 'M12 4v12M8 12l4 4 4-4M4 20h16',
         'file' => 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6',
         'revert' => 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5',
+        'transfer' => 'm16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16',
+        'settlement' => '<path d="m11 17 2 2a1 1 0 1 0 3-3" /><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 6" /><path d="m21 3 1.1 0" /><path d="m4.7 13.9 1.1-1.1" />',
     ];
 @endphp
 
@@ -44,5 +46,9 @@
     aria-hidden="true"
     {{ $attributes->merge(['class' => 'hex-icon '.$class]) }}
 >
-    <path d="{{ $paths[$name] ?? $paths['grid'] }}" />
+    @if (str_starts_with($paths[$name] ?? '', '<'))
+        {!! $paths[$name] !!}
+    @else
+        <path d="{{ $paths[$name] ?? $paths['grid'] }}" />
+    @endif
 </svg>

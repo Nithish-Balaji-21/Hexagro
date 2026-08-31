@@ -12,5 +12,7 @@ readonly class ImportPreviewRow
         public string $amount,
         public bool $valid,
         public ?string $error = null,
+        public bool $skipped = false,
+        public ?string $skipReason = null,
     ) {}
 }

@@ -117,8 +117,8 @@ class TransferIndex extends Component
         $validated = $this->validate([
             'formDate' => ['required', 'date'],
             'formCostCenterId' => ['required', Rule::exists('cost_centers', 'id')],
-            'formFromId' => ['required', Rule::exists('entities', 'id'), 'different:formToId'],
-            'formToId' => ['required', Rule::exists('entities', 'id')],
+            'formFromId' => ['required', Rule::exists('entities', 'id')->where('entity_type', \App\Enums\EntityType::BankAccount->value), 'different:formToId'],
+            'formToId' => ['required', Rule::exists('entities', 'id')->where('entity_type', \App\Enums\EntityType::BankAccount->value)],
             'formNote' => ['nullable', 'string', 'max:255'],
             'formAmount' => ['required', 'numeric', 'min:0.01'],
         ]);
@@ -189,7 +189,7 @@ class TransferIndex extends Component
             'totalAmount' => (string) $this->baseQuery()->sum('amount'),
             'entityNets' => $this->entityNetBalances($unitIds),
             'scopedUnits' => $this->scopedUnits(),
-            'entities' => Entity::query()->active()->orderBy('name')->get(),
+            'entities' => Entity::query()->active()->bankAccounts()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
             'lastImportRun' => $importRunService->latestForKind('transfers'),
@@ -234,7 +234,7 @@ class TransferIndex extends Component
      */
     private function entityNetBalances(array $unitIds): Collection
     {
-        $nets = Entity::query()->active()->orderBy('name')->get()->mapWithKeys(
+        $nets = Entity::query()->active()->bankAccounts()->orderBy('name')->get()->mapWithKeys(
             fn (Entity $entity): array => [$entity->id => ['entity' => $entity, 'net' => Money::zero()]],
         );
 
@@ -267,7 +267,7 @@ class TransferIndex extends Component
         $this->editingId = null;
         $this->formDate = now()->toDateString();
         $this->formCostCenterId = (string) (CostCenter::query()->orderBy('name')->value('id') ?? '');
-        $entities = Entity::query()->active()->orderBy('name')->get();
+        $entities = Entity::query()->active()->bankAccounts()->orderBy('name')->get();
         $this->formFromId = (string) ($entities->first()?->id ?? '');
         $this->formToId = (string) ($entities->skip(1)->first()?->id ?? '');
         $this->formNote = '';

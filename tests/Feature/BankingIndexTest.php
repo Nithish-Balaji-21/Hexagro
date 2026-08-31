@@ -56,13 +56,13 @@ class BankingIndexTest extends TestCase
         ]);
     }
 
-    public function test_banking_page_shows_computed_alam_label(): void
+    public function test_banking_page_does_not_show_computed_alam_label(): void
     {
         $user = User::query()->where('name', 'Jagadeesan')->firstOrFail();
 
         $this->actingAs($user);
 
         Livewire::test(BankingIndex::class)
-            ->assertSee('computed from transactions');
+            ->assertDontSee('computed from transactions');
     }
 }

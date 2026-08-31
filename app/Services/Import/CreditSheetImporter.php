@@ -19,16 +19,26 @@ class CreditSheetImporter
             $rowNumber = $index + 2;
             $type = trim((string) ($row['type'] ?? ''));
 
-            if ($type === '' || $this->lookup->isTransferFund($type)) {
+            if ($this->lookup->isTransferFund($type)) {
+                $previewRows[] = new ImportPreviewRow(
+                    rowNumber: $rowNumber,
+                    date: $this->lookup->parseDate($row['date'] ?? null) ?: (string) ($row['date'] ?? ''),
+                    costCenter: (string) ($row['cost_center'] ?? ''),
+                    detail: (string) ($row['received_to'] ?? ''),
+                    amount: (string) ($row['amount'] ?? ''),
+                    valid: true,
+                    skipped: true,
+                    skipReason: "Transfer Fund — Skipped here as it is imported via the Transfers tab.",
+                );
                 continue;
             }
 
             try {
-                $this->validateRow($row);
+                $attributes = $this->validateRow($row);
 
                 $previewRows[] = new ImportPreviewRow(
                     rowNumber: $rowNumber,
-                    date: (string) ($row['date'] ?? ''),
+                    date: $attributes['txn_date'],
                     costCenter: (string) ($row['cost_center'] ?? ''),
                     detail: (string) ($row['received_to'] ?? ''),
                     amount: (string) ($row['amount'] ?? ''),
@@ -59,36 +69,13 @@ class CreditSheetImporter
 
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2;
+            $type = trim((string) ($row['type'] ?? ''));
+
+            if ($this->lookup->isTransferFund($type)) {
+                continue;
+            }
 
             try {
-                $type = trim((string) ($row['type'] ?? ''));
-
-                if ($type === '') {
-                    $result = new ImportSheetResult(
-                        sheet: $result->sheet,
-                        imported: $result->imported,
-                        created: $result->created,
-                        skipped: $result->skipped + 1,
-                        errors: $result->errors,
-                        messages: $result->messages,
-                    );
-
-                    continue;
-                }
-
-                if ($this->lookup->isTransferFund($type)) {
-                    $result = new ImportSheetResult(
-                        sheet: $result->sheet,
-                        imported: $result->imported,
-                        created: $result->created,
-                        skipped: $result->skipped + 1,
-                        errors: $result->errors,
-                        messages: $result->messages,
-                    );
-
-                    continue;
-                }
-
                 $attributes = $this->validateRow($row);
 
                 $created = 0;
@@ -140,6 +127,10 @@ class CreditSheetImporter
     private function validateRow(array $row): array
     {
         $type = trim((string) ($row['type'] ?? ''));
+
+        if ($type === '') {
+            throw new \InvalidArgumentException('Type is required (cannot be empty).');
+        }
 
         return [
             'txn_date' => $this->lookup->parseDate($row['date'] ?? null),

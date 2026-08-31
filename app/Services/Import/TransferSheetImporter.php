@@ -12,6 +12,67 @@ class TransferSheetImporter
      * @param  list<array<string, mixed>>  $debitRows
      * @param  list<array<string, mixed>>  $creditRows
      */
+    public function preview(array $debitRows, array $creditRows): ImportPreviewResult
+    {
+        $previewRows = [];
+
+        $debitTransfers = $this->collectTransferRows($debitRows, 'paid_through');
+        $creditTransfers = $this->collectTransferRows($creditRows, 'received_to');
+
+        $pairedCreditKeys = [];
+
+        foreach ($debitTransfers as $debitIndex => $debit) {
+            $matchIndex = $this->findMatchingCreditIndex($debit, $creditTransfers, $pairedCreditKeys);
+
+            if ($matchIndex === null) {
+                $previewRows[] = new ImportPreviewRow(
+                    rowNumber: $debitIndex + 2,
+                    date: $debit['date'],
+                    costCenter: $debit['cost_center'],
+                    detail: "Unpaired debit transfer on {$debit['date']} ({$debit['cost_center']}) from {$debit['entity']} for {$debit['amount']}",
+                    amount: $debit['amount'],
+                    valid: false,
+                    error: "Unpaired debit transfer: from {$debit['entity']} for {$debit['amount']}. Missing matching credit entry.",
+                );
+                continue;
+            }
+
+            $pairedCreditKeys[] = $matchIndex;
+            $credit = $creditTransfers[$matchIndex];
+
+            $previewRows[] = new ImportPreviewRow(
+                rowNumber: $debitIndex + 2,
+                date: $debit['date'],
+                costCenter: $debit['cost_center'],
+                detail: "{$debit['entity']} → {$credit['entity']}",
+                amount: $debit['amount'],
+                valid: true,
+            );
+        }
+
+        foreach ($creditTransfers as $index => $credit) {
+            if (in_array($index, $pairedCreditKeys, true)) {
+                continue;
+            }
+
+            $previewRows[] = new ImportPreviewRow(
+                rowNumber: $index + 2,
+                date: $credit['date'],
+                costCenter: $credit['cost_center'],
+                detail: "Unpaired credit transfer on {$credit['date']} ({$credit['cost_center']}) to {$credit['entity']} for {$credit['amount']}",
+                amount: $credit['amount'],
+                valid: false,
+                error: "Unpaired credit transfer: to {$credit['entity']} for {$credit['amount']}. Missing matching debit entry.",
+            );
+        }
+
+        return new ImportPreviewResult(sheet: 'Transfers', rows: $previewRows);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $debitRows
+     * @param  list<array<string, mixed>>  $creditRows
+     */
     public function import(array $debitRows, array $creditRows, bool $dryRun = false, ?int $importRunId = null): ImportSheetResult
     {
         $result = new ImportSheetResult(sheet: 'Transfers');

@@ -36,7 +36,6 @@
                         <x-hex.icon name="check" class="w-[9px] h-[9px]" />
                     @endif
                 </span>
-                <span class="dot {{ $dotClass }}"></span>
                 <span>{{ $unit->name }}</span>
             </button>
         @endforeach

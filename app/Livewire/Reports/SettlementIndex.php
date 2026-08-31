@@ -81,7 +81,7 @@ class SettlementIndex extends Component
         $this->ledgerDate = now()->toDateString();
         $this->ledgerFromId = $fromId ? (string) $fromId : '';
         $this->ledgerToId = $toId ? (string) $toId : '';
-        $this->ledgerAmount = $amount ?? '';
+        $this->ledgerAmount = $amount !== null ? (string) round((float) $amount, 2) : '';
         $this->ledgerNote = '';
         $this->showLedgerForm = true;
     }

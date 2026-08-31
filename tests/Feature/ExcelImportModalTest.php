@@ -91,7 +91,7 @@ class ExcelImportModalTest extends TestCase
             ->get('/import')
             ->assertOk()
             ->assertSee('Import Data')
-            ->assertSee('Download import templates');
+            ->assertDontSee('Download import templates');
 
         Livewire::actingAs($admin)
             ->test(ImportIndex::class)

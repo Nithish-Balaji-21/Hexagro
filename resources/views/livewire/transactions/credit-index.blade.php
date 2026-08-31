@@ -5,6 +5,9 @@
     >
         @can('create', App\Models\CreditTransaction::class)
             <x-slot:actions>
+                <a href="{{ route('import', ['kind' => 'credit']) }}" wire:navigate class="hex-btn icon-only" title="Import history / Revert">
+                    <x-hex.icon name="history" />
+                </a>
                 <button type="button" wire:click="$dispatch('open-import', { kind: 'credit' })" class="hex-btn">
                     <x-hex.icon name="upload" />
                     Import

@@ -2,14 +2,7 @@
     <x-hex.page-head
         :title="'Welcome back, '.explode(' ', auth()->user()->name)[0]"
         :subtitle="$allSelected ? 'Here\'s where the business stands today.' : 'Filtered to '.$scopeLabel.'.'"
-    >
-        <x-slot:actions>
-            <a href="{{ route('debit') }}" wire:navigate class="hex-btn hex-btn-primary">
-                <x-hex.icon name="down" />
-                Go to Debit
-            </a>
-        </x-slot:actions>
-    </x-hex.page-head>
+    />
 
     <div class="filter-bar filter-bar-range">
         <x-hex.range-picker
@@ -46,6 +39,7 @@
             <div class="dmc-total">Total<b class="rec"><x-hex.money :amount="$summary->creditTotal()" /></b></div>
         </div>
 
+        @if (auth()->user()->configKey() !== 'vikas')
         <div class="card card-pad dash-mini-card">
             <div class="dmc-head">
                 <div class="kpi-icon"><x-hex.icon name="bank" /></div>
@@ -61,6 +55,7 @@
                 <p class="hint mt-2">Company-wide snapshot — not unit-specific.</p>
             @endif
         </div>
+        @endif
 
         <div class="card card-pad dash-mini-card">
             <div class="dmc-head">

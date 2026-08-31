@@ -126,8 +126,7 @@ class ExcelImportService
         }
 
         if (in_array('transfers', $sheets, true)) {
-            $transferResult = $this->transferImporter->import($debitRows, $creditRows, dryRun: true);
-            $results[] = $this->summaryPreview('Transfers', $transferResult);
+            $results[] = $this->transferImporter->preview($debitRows, $creditRows);
         }
 
         if (in_array('outstanding', $sheets, true)) {
