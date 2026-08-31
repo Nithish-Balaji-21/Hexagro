@@ -38,9 +38,11 @@
                 </table>
             </div>
         </div>
-        <div class="card card-pad" wire:ignore>
+        <div class="card card-pad" id="chartSummaryContainer" data-chart='@json($chartData)'>
             <div class="card-head" style="border:none;padding:0 0 12px"><h3>Funding Mix</h3></div>
-            <div class="chart-canvas-box"><canvas id="chartSummary" data-chart='@json($chartData)'></canvas></div>
+            <div class="chart-canvas-box" wire:ignore>
+                <canvas id="chartSummary"></canvas>
+            </div>
         </div>
     </div>
 
@@ -150,9 +152,10 @@
 @script
 <script>
     window.renderSummaryChart = function() {
+        const container = document.getElementById('chartSummaryContainer');
         const canvas = document.getElementById('chartSummary');
-        if (!canvas || typeof Chart === 'undefined') return;
-        const rows = JSON.parse(canvas.dataset.chart || '[]');
+        if (!container || !canvas || typeof Chart === 'undefined') return;
+        const rows = JSON.parse(container.dataset.chart || '[]');
         if (window.__summaryChart) window.__summaryChart.destroy();
         if (!rows.length) return;
         window.__summaryChart = new Chart(canvas, {
@@ -164,5 +167,10 @@
     window.renderSummaryChart();
     document.removeEventListener('livewire:navigated', window.renderSummaryChart);
     document.addEventListener('livewire:navigated', window.renderSummaryChart);
+    Livewire.hook('morphed', () => {
+        if (document.getElementById('chartSummaryContainer')) {
+            window.renderSummaryChart();
+        }
+    });
 </script>
 @endscript

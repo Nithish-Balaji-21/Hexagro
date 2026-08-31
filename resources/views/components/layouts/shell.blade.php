@@ -159,16 +159,7 @@
                 </div>
             </header>
 
-            <div
-                class="content"
-                @units-selection-changed.window="
-                    Livewire.all().forEach(c => {
-                        if (c.name !== 'layout.unit-switcher' && c.name !== 'import.excel-import-modal') {
-                            c.$wire.call('refreshUnitScope');
-                        }
-                    })
-                "
-            >
+            <div class="content">
                 {{ $slot }}
             </div>
         </div>

@@ -25,9 +25,13 @@
         <x-hex.kpi-card label="Total Spend" :value="\App\Support\Inr::format($totalAll, 2)" />
     </div>
 
-    <div class="card mb-4" wire:key="ms-chart-{{ md5(json_encode(['labels' => $chartLabels, 'data' => $chartData])) }}">
+    <div class="card mb-4" wire:key="ms-chart-card">
         <div class="card-head"><h3>Monthly Spend Trend</h3></div>
-        <div class="chart-wrap"><div class="chart-canvas-box"><canvas id="chartMS" data-chart='@json(['labels' => $chartLabels, 'data' => $chartData])'></canvas></div></div>
+        <div class="chart-wrap" id="chartMSContainer" data-chart='@json(['labels' => $chartLabels, 'data' => $chartData])'>
+            <div class="chart-canvas-box" wire:ignore>
+                <canvas id="chartMS"></canvas>
+            </div>
+        </div>
     </div>
 
     <div class="card">
@@ -63,9 +67,10 @@
 @script
 <script>
     window.renderMSChart = function() {
+        const container = document.getElementById('chartMSContainer');
         const canvas = document.getElementById('chartMS');
-        if (!canvas || typeof Chart === 'undefined') return;
-        const payload = JSON.parse(canvas.dataset.chart || '{}');
+        if (!container || !canvas || typeof Chart === 'undefined') return;
+        const payload = JSON.parse(container.dataset.chart || '{}');
         if (window.__msChart) window.__msChart.destroy();
         window.__msChart = new Chart(canvas, {
             type: 'bar',
@@ -76,8 +81,8 @@
     window.renderMSChart();
     document.removeEventListener('livewire:navigated', window.renderMSChart);
     document.addEventListener('livewire:navigated', window.renderMSChart);
-    Livewire.hook('morph.updated', () => {
-        if (document.getElementById('chartMS')) {
+    Livewire.hook('morphed', () => {
+        if (document.getElementById('chartMSContainer')) {
             window.renderMSChart();
         }
     });

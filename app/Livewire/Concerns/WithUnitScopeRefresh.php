@@ -15,7 +15,7 @@ trait WithUnitScopeRefresh
     #[On('units-changed')]
     #[On('unitsChanged')]
     #[On('units-selection-changed')]
-    public function refreshUnitScope(): void
+    public function refreshUnitScope(mixed ...$args): void
     {
         $this->unitScopeVersion++;
         $this->syncUnitFilters();

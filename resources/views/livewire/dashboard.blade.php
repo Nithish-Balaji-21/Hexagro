@@ -71,14 +71,14 @@
             <div class="dmc-row"><span>Receivables</span><b class="rec"><x-hex.money :amount="$summary->receivables" :decimals="2" /></b></div>
         </div>
 
-        <div class="card card-pad dash-mini-card dash-chart-card" wire:key="share-fair-chart-{{ md5(json_encode($chartData)) }}">
+        <div class="card card-pad dash-mini-card dash-chart-card" wire:key="share-fair-chart-card">
             <div class="dmc-head">
                 <div class="kpi-icon"><x-hex.icon name="layers" /></div>
                 <h3>Shareholder Contribution vs Fair Share</h3>
             </div>
-            <div class="chart-wrap">
-                <div class="chart-canvas-box">
-                    <canvas id="chartShareFair" data-chart='@json($chartData)'></canvas>
+            <div class="chart-wrap" id="chartShareFairContainer" data-chart='@json($chartData)'>
+                <div class="chart-canvas-box" wire:ignore>
+                    <canvas id="chartShareFair"></canvas>
                 </div>
             </div>
             <p class="hint mt-2">Green = contribution · amber = over fair share · hatched = still owed @if (! $allSelected) · {{ $scopeLabel }}@endif</p>
@@ -105,10 +105,11 @@
     };
 
     window.renderShareFairChart = function() {
+        const container = document.getElementById('chartShareFairContainer');
         const canvas = document.getElementById('chartShareFair');
-        if (!canvas || typeof Chart === 'undefined') return;
+        if (!container || !canvas || typeof Chart === 'undefined') return;
 
-        const data = JSON.parse(canvas.dataset.chart || '{}');
+        const data = JSON.parse(container.dataset.chart || '{}');
         if (window.__shareFairChart) {
             window.__shareFairChart.destroy();
         }
@@ -144,8 +145,8 @@
     window.renderShareFairChart();
     document.removeEventListener('livewire:navigated', window.renderShareFairChart);
     document.addEventListener('livewire:navigated', window.renderShareFairChart);
-    Livewire.hook('morph.updated', () => {
-        if (document.getElementById('chartShareFair')) {
+    Livewire.hook('morphed', () => {
+        if (document.getElementById('chartShareFairContainer')) {
             window.renderShareFairChart();
         }
     });

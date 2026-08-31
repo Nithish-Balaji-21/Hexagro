@@ -47,7 +47,7 @@ class UnitSwitcher extends Component
         $this->dispatchEvents();
     }
 
-    public function toggleUnit(string|int $unit, UnitScope $unitScope): void
+    public function toggleUnit(string $unitName, UnitScope $unitScope): void
     {
         if ($this->locked()) {
             return;
@@ -55,16 +55,14 @@ class UnitSwitcher extends Component
 
         $visibleUnits = $this->visibleUnits();
 
-        $targetUnit = is_numeric($unit)
-            ? $visibleUnits->firstWhere('id', (int) $unit)
-            : $visibleUnits->firstWhere('name', (string) $unit);
+        $targetUnit = $visibleUnits->firstWhere('name', $unitName);
 
         if (! $targetUnit) {
             return;
         }
 
         $unitName = $targetUnit->name;
-        $selectedNames = $this->selectedUnits;
+        $selectedNames = $unitScope->selectedUnitNames();
 
         if (in_array($unitName, $selectedNames, true)) {
             // Guard: Refuse to deselect if it's the last remaining selected unit
@@ -109,15 +107,10 @@ class UnitSwitcher extends Component
 
     private function dispatchEvents(): void
     {
-        $payload = [
-            'selectedUnits' => $this->selectedUnits,
-            'selectedIds' => $this->selectedIds,
-        ];
-
-        $this->dispatch('UnitsSelectionChanged', ...$payload);
-        $this->dispatch('units-changed', ...$payload);
-        $this->dispatch('unitsChanged', ...$payload);
-        $this->dispatch('units-selection-changed', ...$payload);
+        $this->dispatch('UnitsSelectionChanged');
+        $this->dispatch('units-changed');
+        $this->dispatch('unitsChanged');
+        $this->dispatch('units-selection-changed');
     }
 
     public function render()
