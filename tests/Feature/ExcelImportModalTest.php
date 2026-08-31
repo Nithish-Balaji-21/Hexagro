@@ -177,8 +177,8 @@ class ExcelImportModalTest extends TestCase
         $outstanding->fromArray([
             ['Outstanding payments (unpaid — informational, not part of spend or settlement)'],
             [],
-            ['Item / Party', 'Cost Center', 'Amount (₹)', 'Notes'],
-            ['Sakthi Mariamman', 'Washing Unit', 484690, ''],
+            ['Date', 'Item / Party', 'Cost Center', 'Amount (₹)', 'Notes'],
+            ['2026-06-15', 'Sakthi Mariamman', 'Washing Unit', 484690, ''],
         ]);
 
         $directory = dirname($path);
@@ -216,8 +216,8 @@ class ExcelImportModalTest extends TestCase
         $sheet->fromArray([
             ['Outstanding payments'],
             [],
-            ['Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
-            ['Unknown Party XYZ', 'Fibre Unit', 'Receivable', 1000, ''],
+            ['Date', 'Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
+            ['2026-06-15', 'Unknown Party XYZ', 'Fibre Unit', 'Receivable', 1000, ''],
         ]);
 
         $directory = dirname($path);
@@ -236,8 +236,8 @@ class ExcelImportModalTest extends TestCase
         $sheet->fromArray([
             ['Outstanding payments'],
             [],
-            ['Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
-            ['New Customer Ltd', 'Fibre Unit', 'Receivable', $amount, ''],
+            ['Date', 'Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
+            ['2026-06-15', 'New Customer Ltd', 'Fibre Unit', 'Receivable', $amount, ''],
         ]);
 
         $directory = dirname($path);

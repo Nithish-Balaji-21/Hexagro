@@ -55,13 +55,13 @@ class DashboardUnitScopeTest extends TestCase
         app(UnitScope::class)->initializeForUser($admin);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('6,000.00');
+            ->assertSee('6,000');
 
         app(UnitScope::class)->setSelectedUnits([$fibreId]);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('1,000.00')
-            ->assertDontSee('5,000.00');
+            ->assertSee('1,000')
+            ->assertDontSee('5,000');
     }
 
     public function test_dashboard_refreshes_when_units_changed_event_dispatched(): void
@@ -93,15 +93,15 @@ class DashboardUnitScopeTest extends TestCase
         app(UnitScope::class)->initializeForUser($admin);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('6,000.00');
+            ->assertSee('6,000');
 
         app(UnitScope::class)->setSelectedUnits([$fibreId]);
 
         Livewire::test(Dashboard::class)
             ->dispatch('units-selection-changed')
             ->assertSet('unitScopeVersion', 1)
-            ->assertSee('1,000.00')
-            ->assertDontSee('5,000.00');
+            ->assertSee('1,000')
+            ->assertDontSee('5,000');
     }
 
     public function test_unit_switcher_toggle_dispatches_units_selection_changed(): void
@@ -150,8 +150,8 @@ class DashboardUnitScopeTest extends TestCase
             ->assertDispatched('units-selection-changed');
 
         Livewire::test(Dashboard::class)
-            ->assertSee('5,000.00')
-            ->assertDontSee('1,000.00');
+            ->assertSee('5,000')
+            ->assertDontSee('1,000');
     }
 
     public function test_two_request_flow_switcher_toggle_then_dashboard_event(): void
@@ -183,7 +183,7 @@ class DashboardUnitScopeTest extends TestCase
         app(UnitScope::class)->initializeForUser($admin);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('6,000.00');
+            ->assertSee('6,000');
 
         Livewire::test(UnitSwitcher::class)
             ->call('toggleUnit', 'Fibre Unit')
@@ -192,7 +192,7 @@ class DashboardUnitScopeTest extends TestCase
         Livewire::test(Dashboard::class)
             ->dispatch('units-selection-changed')
             ->assertSet('unitScopeVersion', 1)
-            ->assertSee('5,000.00')
-            ->assertDontSee('1,000.00');
+            ->assertSee('5,000')
+            ->assertDontSee('1,000');
     }
 }

@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Models\BankingSnapshot;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
-use App\Models\HistoricalAlamExpense;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\SettlementAdjustment;
@@ -53,7 +52,6 @@ class AppServiceProvider extends ServiceProvider
             Purchase::class,
             Sale::class,
             BankingSnapshot::class,
-            HistoricalAlamExpense::class,
             SettlementAdjustment::class,
             SettlementLedgerEntry::class,
         ];

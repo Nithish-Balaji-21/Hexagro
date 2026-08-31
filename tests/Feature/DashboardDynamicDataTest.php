@@ -195,7 +195,7 @@ class DashboardDynamicDataTest extends TestCase
         app(UnitScope::class)->initializeForUser($admin);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('₹0.00')
+            ->assertSee('₹0')
             ->assertSee('—');
     }
 
@@ -215,7 +215,7 @@ class DashboardDynamicDataTest extends TestCase
         ]);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('12,000.00');
+            ->assertSee('12,000');
     }
 
     public function test_dashboard_refreshes_after_import_completed_event(): void
@@ -239,9 +239,91 @@ class DashboardDynamicDataTest extends TestCase
         app(UnitScope::class)->initializeForUser($admin);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('1,000.00')
+            ->assertSee('1,000')
             ->dispatch('import-completed')
             ->assertSet('importRefreshVersion', 1);
+    }
+
+    public function test_banking_uses_snapshot_as_of_range_end(): void
+    {
+        BankingSnapshot::query()->delete();
+
+        $admin = $this->admin();
+
+        BankingSnapshot::factory()->create([
+            'as_of_date' => now()->subMonths(2)->toDateString(),
+            'current_balance' => '100000.00',
+            'created_by' => $admin->id,
+        ]);
+
+        BankingSnapshot::factory()->create([
+            'as_of_date' => now()->subMonth()->toDateString(),
+            'current_balance' => '200000.00',
+            'created_by' => $admin->id,
+        ]);
+
+        $summary = app(DashboardService::class)->summary(
+            DateRange::fromState('custom', now()->subMonths(6)->toDateString(), now()->subMonth()->toDateString()),
+            CostCenter::query()->pluck('id')->all(),
+        );
+
+        $this->assertSame('200000.00', $summary->bankCurrent);
+    }
+
+    public function test_outstandings_use_latest_import_as_of_range_end(): void
+    {
+        $fibreId = $this->fibreUnitId();
+
+        Purchase::query()->delete();
+        Sale::query()->delete();
+
+        Purchase::factory()->create([
+            'cost_center_id' => $fibreId,
+            'vendor_name' => 'Old Vendor',
+            'total_billed' => '5000.00',
+            'total_paid' => '0.00',
+            'as_of_date' => now()->subMonths(2)->toDateString(),
+            'txn_date' => now()->subMonths(2)->toDateString(),
+        ]);
+
+        Purchase::factory()->create([
+            'cost_center_id' => $fibreId,
+            'vendor_name' => 'New Vendor',
+            'total_billed' => '8000.00',
+            'total_paid' => '0.00',
+            'as_of_date' => now()->subMonth()->toDateString(),
+            'txn_date' => now()->subMonth()->toDateString(),
+        ]);
+
+        $summaryInRange = app(DashboardService::class)->summary(
+            DateRange::fromState('custom', now()->subMonths(6)->toDateString(), now()->subMonth()->toDateString()),
+            [$fibreId],
+        );
+
+        $this->assertSame(Money::of('8000'), $summaryInRange->payables);
+
+        $summaryBeforeImport = app(DashboardService::class)->summary(
+            DateRange::fromState('custom', now()->subMonths(6)->toDateString(), now()->subMonths(2)->toDateString()),
+            [$fibreId],
+        );
+
+        $this->assertSame(Money::of('5000'), $summaryBeforeImport->payables);
+    }
+
+    public function test_shareholder_chart_excludes_vikas_when_fibre_unit_not_selected(): void
+    {
+        $chipsId = (int) CostCenter::query()->where('name', 'Chips Unit')->value('id');
+        $range = DateRange::fromState('this_month');
+
+        $bars = app(DashboardService::class)->shareholderBars([$chipsId], $range);
+        $names = collect($bars)->pluck('name')->all();
+
+        $this->assertNotContains('Vikas', $names);
+
+        $fibreId = $this->fibreUnitId();
+        $barsWithFibre = app(DashboardService::class)->shareholderBars([$fibreId], $range);
+
+        $this->assertContains('Vikas', collect($barsWithFibre)->pluck('name')->all());
     }
 
     private function dashboardSummary(): DashboardSummary

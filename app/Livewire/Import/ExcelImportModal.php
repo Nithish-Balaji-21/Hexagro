@@ -3,10 +3,13 @@
 namespace App\Livewire\Import;
 
 use App\Models\DebitTransaction;
+use App\Models\ImportRun;
 use App\Services\Import\ExcelImportService;
 use App\Services\Import\ImportPreviewResult;
+use App\Services\Import\ImportRunService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
@@ -29,7 +32,36 @@ class ExcelImportModal extends Component
 
     public ?string $storedPath = null;
 
+    public ?string $uploadFilename = null;
+
     public $workbook;
+
+    #[Computed]
+    public function lastImportRun(): ?ImportRun
+    {
+        if (! in_array($this->kind, ['debit', 'credit', 'transfers'], true)) {
+            return null;
+        }
+
+        return app(ImportRunService::class)->latestForKind($this->kind);
+    }
+
+    public function revertLastImport(ImportRunService $importRunService): void
+    {
+        $this->authorize('create', DebitTransaction::class);
+
+        $run = $this->lastImportRun();
+
+        if ($run === null) {
+            $this->dispatch('toast', message: 'No import to revert.');
+
+            return;
+        }
+
+        $deleted = $importRunService->revert($run);
+        $this->dispatch('toast', message: "Reverted last import — {$deleted} row(s) removed.");
+        $this->dispatch('import-completed');
+    }
 
     public function mount(bool $showOnLoad = false, string $kind = 'workbook'): void
     {
@@ -73,6 +105,9 @@ class ExcelImportModal extends Component
 
         $this->cleanupStoredFile();
         $this->storedPath = $this->workbook->store('imports', 'local');
+        $this->uploadFilename = method_exists($this->workbook, 'getClientOriginalName')
+            ? $this->workbook->getClientOriginalName()
+            : 'workbook.xlsx';
         $absolutePath = Storage::disk('local')->path($this->storedPath);
 
         $this->previewResults = array_map(
@@ -111,7 +146,13 @@ class ExcelImportModal extends Component
         }
 
         $absolutePath = Storage::disk('local')->path($this->storedPath);
-        $results = $importService->import($absolutePath, dryRun: false, only: $this->sheetsToImport());
+        $results = $importService->import(
+            $absolutePath,
+            dryRun: false,
+            only: $this->sheetsToImport(),
+            filename: $this->uploadFilename ?? basename($absolutePath),
+            userId: auth()->id(),
+        );
 
         $summary = collect($results)
             ->map(fn ($result): string => "{$result->sheet}: {$result->imported} imported, {$result->skipped} skipped, {$result->errors} errors")
@@ -135,7 +176,19 @@ class ExcelImportModal extends Component
         return match ($this->kind) {
             'debit' => 'Import Debit',
             'credit' => 'Import Credit',
+            'transfers' => 'Import Transfers',
             default => 'Import Workbook',
+        };
+    }
+
+    public function modalHint(): string
+    {
+        return match ($this->kind) {
+            'debit' => 'Accepts .xlsx or .csv files with Debit data',
+            'credit' => 'Accepts .xlsx or .csv files with Credit data',
+            'transfers' => 'Accepts .xlsx or .csv files with Transfers data',
+            'outstanding' => 'Accepts .xlsx or .csv files with Outstanding data',
+            default => 'Accepts .xlsx or .csv files with Debit, Credit, Transfers, or Outstanding data',
         };
     }
 
@@ -181,6 +234,7 @@ class ExcelImportModal extends Component
         return match ($this->kind) {
             'debit' => ['debit'],
             'credit' => ['credit'],
+            'transfers' => ['transfers'],
             default => ['debit', 'credit', 'transfers', 'outstanding'],
         };
     }
@@ -192,6 +246,7 @@ class ExcelImportModal extends Component
         $this->skipErrors = false;
         $this->workbook = null;
         $this->storedPath = null;
+        $this->uploadFilename = null;
     }
 
     private function cleanupStoredFile(): void

@@ -2,10 +2,14 @@
 
 namespace App\Livewire\Transactions;
 
+use App\Livewire\Concerns\WithDateRange;
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\Entity;
 use App\Models\Transfer;
+use App\Services\Import\ImportRunService;
+use App\Support\DateRange;
 use App\Support\Money;
 use App\Support\UnitScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -23,6 +27,8 @@ use Livewire\WithPagination;
 class TransferIndex extends Component
 {
     use AuthorizesRequests;
+    use WithDateRange;
+    use WithImportRefresh;
     use WithPagination;
     use WithUnitScopeRefresh;
 
@@ -148,13 +154,30 @@ class TransferIndex extends Component
         $this->dispatch('toast', message: 'Transfer deleted.');
     }
 
+    public function revertLastImport(ImportRunService $importRunService): void
+    {
+        $this->authorize('create', Transfer::class);
+
+        $run = $importRunService->latestForKind('transfers');
+
+        if ($run === null) {
+            $this->dispatch('toast', message: 'No import to revert.');
+
+            return;
+        }
+
+        $deleted = $importRunService->revert($run);
+        $this->dispatch('toast', message: "Reverted last import — {$deleted} row(s) removed.");
+        $this->dispatch('import-completed');
+    }
+
     public function closeForm(): void
     {
         $this->showForm = false;
         $this->resetForm();
     }
 
-    public function render(UnitScope $unitScope)
+    public function render(UnitScope $unitScope, ImportRunService $importRunService)
     {
         $unitIds = $this->scopedUnitIds();
         if ($this->unitTab !== '') {
@@ -169,6 +192,7 @@ class TransferIndex extends Component
             'entities' => Entity::query()->active()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
+            'lastImportRun' => $importRunService->latestForKind('transfers'),
         ]);
     }
 
@@ -187,7 +211,11 @@ class TransferIndex extends Component
             $unitIds = array_values(array_intersect($unitIds, [(int) $this->unitTab]));
         }
 
-        $query = Transfer::query()->whereIn('cost_center_id', $unitIds);
+        $range = $this->dateRange();
+
+        $query = Transfer::query()
+            ->whereIn('cost_center_id', $unitIds)
+            ->whereBetween('txn_date', [$range->from, $range->to]);
 
         if ($this->fromFilter !== '') {
             $query->where('from_entity_id', (int) $this->fromFilter);
@@ -210,8 +238,11 @@ class TransferIndex extends Component
             fn (Entity $entity): array => [$entity->id => ['entity' => $entity, 'net' => Money::zero()]],
         );
 
+        $range = $this->dateRange();
+
         Transfer::query()
             ->whereIn('cost_center_id', $unitIds)
+            ->whereBetween('txn_date', [$range->from, $range->to])
             ->get()
             ->each(function (Transfer $transfer) use ($nets): void {
                 $from = $nets[$transfer->from_entity_id] ?? null;

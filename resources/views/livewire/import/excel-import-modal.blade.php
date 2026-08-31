@@ -4,7 +4,25 @@
         <div class="modal wide">
             <div class="modal-head">
                 <h3>{{ $this->modalTitle() }} — Excel</h3>
-                <button type="button" wire:click="close" class="tbl-icon-btn"><x-hex.icon name="x" /></button>
+                <div class="modal-head-actions">
+                    @if (in_array($kind, ['debit', 'credit', 'transfers', 'outstanding'], true))
+                        <a href="{{ route('import.template', $kind) }}" class="tbl-icon-btn" title="Download template" download>
+                            <x-hex.icon name="download" />
+                        </a>
+                    @endif
+                    @if ($this->lastImportRun)
+                        <button
+                            type="button"
+                            wire:click="revertLastImport"
+                            wire:confirm="Revert import of {{ $this->lastImportRun->filename }} ({{ $this->lastImportRun->row_count }} rows)? This cannot be undone."
+                            class="tbl-icon-btn danger"
+                            title="Revert last import ({{ $this->lastImportRun->filename }})"
+                        >
+                            <x-hex.icon name="revert" />
+                        </button>
+                    @endif
+                    <button type="button" wire:click="close" class="tbl-icon-btn" title="Close"><x-hex.icon name="x" /></button>
+                </div>
             </div>
 
             <div class="modal-body">
@@ -23,20 +41,40 @@
                 </div>
 
                 @if ($step === 1)
-                    <div class="dropzone">
-                        <x-hex.icon name="upload" />
-                        <p><b>Drag and drop</b> your Excel export here, or choose a file</p>
-                        <input type="file" wire:model="workbook" accept=".xlsx,.csv,.txt" class="mt-3 text-sm">
-                        <p class="hint mt-2">Accepts .xlsx or .csv files with Debit, Credit, Transfers, or Outstanding data</p>
-                        @error('workbook') <p class="text-pay text-sm mt-2">{{ $message }}</p> @enderror
-                        @if ($workbook)
-                            <div class="fname mt-3">
-                                <x-hex.icon name="file" />
-                                {{ method_exists($workbook, 'getClientOriginalName') ? $workbook->getClientOriginalName() : 'workbook.xlsx' }}
+                    <div class="custom-dropzone @if($workbook) has-file @endif">
+                        <input type="file" wire:model="workbook" accept=".xlsx,.csv,.txt" id="excel-file-upload" class="hidden-file-input">
+
+                        @if (! $workbook)
+                            <div class="dropzone-content">
+                                <div class="dropzone-icon-wrapper">
+                                    <x-hex.icon name="upload" />
+                                </div>
+                                <div class="dropzone-text">
+                                    <p class="main-label"><b>Drag &amp; drop</b> your Excel export here, or <span class="browse-link">browse</span></p>
+                                    <p class="hint-label">{{ $this->modalHint() }}</p>
+                                </div>
+                                <label for="excel-file-upload" class="hex-btn hex-btn-sm hex-btn-secondary dropzone-btn">
+                                    <x-hex.icon name="file" />
+                                    Choose File
+                                </label>
+                            </div>
+                        @else
+                            <div class="selected-file-card">
+                                <div class="file-icon-box">
+                                    <x-hex.icon name="file" />
+                                </div>
+                                <div class="file-info">
+                                    <span class="file-name">{{ method_exists($workbook, 'getClientOriginalName') ? $workbook->getClientOriginalName() : 'workbook.xlsx' }}</span>
+                                    <span class="file-ready">File attached — ready to preview</span>
+                                </div>
+                                <label for="excel-file-upload" class="change-file-btn" title="Change file">
+                                    Change file
+                                </label>
                             </div>
                         @endif
                     </div>
-                    <div wire:loading wire:target="workbook,preview" class="hint mt-2">Processing file…</div>
+                    @error('workbook') <p class="text-pay text-sm mt-2 text-center">{{ $message }}</p> @enderror
+                    <div wire:loading wire:target="workbook,preview" class="hint mt-2 text-center">Processing file…</div>
                 @endif
 
                 @if ($step === 2)

@@ -24,6 +24,8 @@ class SaleFactory extends Factory
             'total_invoiced' => $invoiced,
             'total_received' => fake()->randomFloat(2, 0, $invoiced),
             'notes' => fake()->optional()->sentence(),
+            'as_of_date' => now()->toDateString(),
+            'txn_date' => now()->toDateString(),
         ];
     }
 }

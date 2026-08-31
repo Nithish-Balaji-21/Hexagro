@@ -20,9 +20,9 @@
     </div>
 
     <div class="kpi-grid mb-5" style="grid-template-columns: repeat(3, 1fr);">
-        <x-hex.kpi-card label="Total Expenses" :value="\App\Support\Inr::format($totalExpenses, 2)" />
-        <x-hex.kpi-card label="Total Raw Materials" :value="\App\Support\Inr::format($totalRaw, 2)" />
-        <x-hex.kpi-card label="Total Spend" :value="\App\Support\Inr::format($totalAll, 2)" />
+        <x-hex.kpi-card label="Total Expenses" :value="\App\Support\Inr::format($totalExpenses)" />
+        <x-hex.kpi-card label="Total Raw Materials" :value="\App\Support\Inr::format($totalRaw)" />
+        <x-hex.kpi-card label="Total Spend" :value="\App\Support\Inr::format($totalAll)" />
     </div>
 
     <div class="card mb-4" wire:key="ms-chart-{{ $chartRefreshKey }}">
@@ -44,13 +44,13 @@
                             <tr wire:key="ms-{{ $cell->monthKey }}-{{ $cell->costCenter->id }}" @if((float)$cell->total == 0) style="opacity:.5" @endif>
                                 <td class="mono">{{ $cell->monthLabel }}</td>
                                 <td><x-hex.tag :unit="$cell->costCenter->name" /></td>
-                                <td class="num amt"><x-hex.money :amount="$cell->expenses" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$cell->rawMaterials" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$cell->expenses" /></td>
+                                <td class="num amt"><x-hex.money :amount="$cell->rawMaterials" /></td>
                                 <td class="num amt">
                                     @if ((float) $cell->total == 0)
                                         <span class="hint">No spend logged</span>
                                     @else
-                                        <x-hex.money :amount="$cell->total" :decimals="2" />
+                                        <x-hex.money :amount="$cell->total" />
                                     @endif
                                 </td>
                             </tr>

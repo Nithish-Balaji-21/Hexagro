@@ -2,6 +2,7 @@
 
 namespace App\Services\Import;
 
+use App\Models\Transfer;
 use App\Services\LedgerRebuildService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -15,14 +16,20 @@ class ExcelImportService
         private TransferSheetImporter $transferImporter,
         private OutstandingSheetImporter $outstandingImporter,
         private LedgerRebuildService $ledgerRebuildService,
+        private ImportRunService $importRunService,
     ) {}
 
     /**
      * @param  list<string>|null  $only
      * @return list<ImportSheetResult>
      */
-    public function import(string $path, bool $dryRun = false, ?array $only = null): array
-    {
+    public function import(
+        string $path,
+        bool $dryRun = false,
+        ?array $only = null,
+        ?string $filename = null,
+        ?int $userId = null,
+    ): array {
         $workbook = new ExcelWorkbook($path);
         $sheets = $only ?? ['debit', 'credit', 'transfers', 'outstanding'];
         $results = [];
@@ -37,17 +44,38 @@ class ExcelImportService
             ? $workbook->rowsWithHeaders('Outstanding', headerRow: 3)
             : [];
 
-        $run = function () use ($dryRun, $sheets, $debitRows, $creditRows, $outstandingRows, &$results): void {
+        $importFilename = $filename ?? basename($path);
+        $importUserId = $userId ?? $this->lookup->adminUserId();
+
+        $run = function () use (
+            $dryRun,
+            $sheets,
+            $debitRows,
+            $creditRows,
+            $outstandingRows,
+            $importFilename,
+            $importUserId,
+            &$results,
+        ): void {
             if (in_array('debit', $sheets, true)) {
-                $results[] = $this->debitImporter->import($debitRows, $dryRun);
+                $importRun = $this->startImportRun('debit', $dryRun, $importFilename, $importUserId);
+                $result = $this->debitImporter->import($debitRows, $dryRun, $importRun?->id);
+                $this->finishImportRun($importRun, $result, $dryRun);
+                $results[] = $result;
             }
 
             if (in_array('credit', $sheets, true)) {
-                $results[] = $this->creditImporter->import($creditRows, $dryRun);
+                $importRun = $this->startImportRun('credit', $dryRun, $importFilename, $importUserId);
+                $result = $this->creditImporter->import($creditRows, $dryRun, $importRun?->id);
+                $this->finishImportRun($importRun, $result, $dryRun);
+                $results[] = $result;
             }
 
             if (in_array('transfers', $sheets, true)) {
-                $results[] = $this->transferImporter->import($debitRows, $creditRows, $dryRun);
+                $importRun = $this->startImportRun('transfers', $dryRun, $importFilename, $importUserId);
+                $result = $this->transferImporter->import($debitRows, $creditRows, $dryRun, $importRun?->id);
+                $this->finishImportRun($importRun, $result, $dryRun);
+                $results[] = $result;
             }
 
             if (in_array('outstanding', $sheets, true)) {
@@ -145,5 +173,29 @@ class ExcelImportService
     private function importsLedgerSources(array $sheets): bool
     {
         return count(array_intersect($sheets, ['debit', 'credit', 'transfers'])) > 0;
+    }
+
+    private function startImportRun(string $kind, bool $dryRun, string $filename, int $userId): ?\App\Models\ImportRun
+    {
+        if ($dryRun) {
+            return null;
+        }
+
+        return $this->importRunService->start($kind, $filename, $userId);
+    }
+
+    private function finishImportRun(?\App\Models\ImportRun $importRun, ImportSheetResult $result, bool $dryRun): void
+    {
+        if ($dryRun || $importRun === null) {
+            return;
+        }
+
+        if ($result->created === 0) {
+            $importRun->delete();
+
+            return;
+        }
+
+        $this->importRunService->finish($importRun, $result->created);
     }
 }

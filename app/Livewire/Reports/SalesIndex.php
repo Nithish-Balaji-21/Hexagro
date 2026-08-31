@@ -37,6 +37,8 @@ class SalesIndex extends Component
 
     public string $formCustomer = '';
 
+    public string $formDate = '';
+
     public string $formInvoiced = '';
 
     public string $formReceived = '';
@@ -68,6 +70,7 @@ class SalesIndex extends Component
         $this->editingId = $sale->id;
         $this->formCostCenterId = (string) $sale->cost_center_id;
         $this->formCustomer = $sale->customer_name;
+        $this->formDate = $sale->txn_date?->toDateString() ?? $sale->as_of_date?->toDateString() ?? now()->toDateString();
         $this->formInvoiced = (string) $sale->total_invoiced;
         $this->formReceived = (string) $sale->total_received;
         $this->formNotes = $sale->notes ?? '';
@@ -79,6 +82,7 @@ class SalesIndex extends Component
         $validated = $this->validate([
             'formCostCenterId' => ['required', Rule::exists('cost_centers', 'id')],
             'formCustomer' => ['required', 'string', 'max:150'],
+            'formDate' => ['required', 'date'],
             'formInvoiced' => ['required', 'numeric', 'min:0'],
             'formReceived' => ['required', 'numeric', 'min:0'],
             'formNotes' => ['nullable', 'string', 'max:500'],
@@ -87,6 +91,8 @@ class SalesIndex extends Component
         $payload = [
             'cost_center_id' => (int) $validated['formCostCenterId'],
             'customer_name' => $validated['formCustomer'],
+            'txn_date' => $validated['formDate'],
+            'as_of_date' => $validated['formDate'],
             'total_invoiced' => $validated['formInvoiced'],
             'total_received' => $validated['formReceived'],
             'notes' => $validated['formNotes'] ?: null,
@@ -135,7 +141,7 @@ class SalesIndex extends Component
 
     private function sales(): LengthAwarePaginator
     {
-        return $this->baseQuery()->with('costCenter')->orderBy('customer_name')->paginate(10);
+        return $this->baseQuery()->with('costCenter')->orderByDesc('txn_date')->orderBy('customer_name')->paginate(10);
     }
 
     private function baseQuery(): Builder
@@ -160,6 +166,7 @@ class SalesIndex extends Component
         $this->editingId = null;
         $this->formCostCenterId = (string) (CostCenter::query()->orderBy('name')->value('id') ?? '');
         $this->formCustomer = '';
+        $this->formDate = now()->toDateString();
         $this->formInvoiced = '';
         $this->formReceived = '0';
         $this->formNotes = '';

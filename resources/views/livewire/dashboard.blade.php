@@ -12,7 +12,6 @@
     </x-hex.page-head>
 
     <div class="filter-bar filter-bar-range">
-        <span class="fb-label"><x-hex.icon name="calendar" /> Spend range</span>
         <x-hex.range-picker
             :preset="$rangePreset"
             :from="$rangeFrom"
@@ -24,8 +23,6 @@
         />
     </div>
 
-    <p class="hint mb-4">Debit &amp; Credit cards follow the spend range above. Banking &amp; Outstandings show current balances. Credit → Sales comes from credit transactions, not the Sales receivables page.</p>
-
     <div class="dash-card-grid" wire:key="unit-scope-{{ $unitScopeVersion }}-{{ $importRefreshVersion }}">
         <div class="card card-pad dash-mini-card">
             <div class="dmc-head">
@@ -33,9 +30,9 @@
                 <h3>Debit</h3>
             </div>
             <p class="hint mb-2">From debit transactions in range</p>
-            <div class="dmc-row"><span>Raw Material</span><b><x-hex.money :amount="$summary->debitRaw" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>Expense</span><b><x-hex.money :amount="$summary->debitExpense" :decimals="2" /></b></div>
-            <div class="dmc-total">Total<b><x-hex.money :amount="$summary->debitTotal()" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>Raw Material</span><b><x-hex.money :amount="$summary->debitRaw" /></b></div>
+            <div class="dmc-row"><span>Expense</span><b><x-hex.money :amount="$summary->debitExpense" /></b></div>
+            <div class="dmc-total">Total<b><x-hex.money :amount="$summary->debitTotal()" /></b></div>
         </div>
 
         <div class="card card-pad dash-mini-card">
@@ -44,9 +41,9 @@
                 <h3>Credit</h3>
             </div>
             <p class="hint mb-2">From credit transactions in range</p>
-            <div class="dmc-row"><span>Sales</span><b class="rec"><x-hex.money :amount="$summary->creditSales" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>Others</span><b class="rec"><x-hex.money :amount="$summary->creditOthers" :decimals="2" /></b></div>
-            <div class="dmc-total">Total<b class="rec"><x-hex.money :amount="$summary->creditTotal()" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>Sales</span><b class="rec"><x-hex.money :amount="$summary->creditSales" /></b></div>
+            <div class="dmc-row"><span>Others</span><b class="rec"><x-hex.money :amount="$summary->creditOthers" /></b></div>
+            <div class="dmc-total">Total<b class="rec"><x-hex.money :amount="$summary->creditTotal()" /></b></div>
         </div>
 
         <div class="card card-pad dash-mini-card">
@@ -55,11 +52,11 @@
                 <h3>Banking</h3>
             </div>
             <p class="hint mb-2">Latest banking snapshot</p>
-            <div class="dmc-row"><span>CA</span><b><x-hex.money :amount="$summary->bankCurrent" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>CC limit</span><b><x-hex.money :amount="$summary->bankCcLimit" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>CC utilised</span><b><x-hex.money :amount="$summary->bankCcUtilised" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>TL limit</span><b><x-hex.money :amount="$summary->bankTlLimit" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>TL outstanding</span><b><x-hex.money :amount="$summary->bankTermLoan" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>CA</span><b><x-hex.money :amount="$summary->bankCurrent" /></b></div>
+            <div class="dmc-row"><span>CC limit</span><b><x-hex.money :amount="$summary->bankCcLimit" /></b></div>
+            <div class="dmc-row"><span>CC utilised</span><b><x-hex.money :amount="$summary->bankCcUtilised" /></b></div>
+            <div class="dmc-row"><span>TL limit</span><b><x-hex.money :amount="$summary->bankTlLimit" /></b></div>
+            <div class="dmc-row"><span>TL outstanding</span><b><x-hex.money :amount="$summary->bankTermLoan" /></b></div>
             @if (! $allSelected)
                 <p class="hint mt-2">Company-wide snapshot — not unit-specific.</p>
             @endif
@@ -71,8 +68,8 @@
                 <h3>Outstandings</h3>
             </div>
             <p class="hint mb-2">Payables from purchases · Receivables from sales balances</p>
-            <div class="dmc-row"><span>Payables</span><b class="pay"><x-hex.money :amount="$summary->payables" :decimals="2" /></b></div>
-            <div class="dmc-row"><span>Receivables</span><b class="rec"><x-hex.money :amount="$summary->receivables" :decimals="2" /></b></div>
+            <div class="dmc-row"><span>Payables</span><b class="pay"><x-hex.money :amount="$summary->payables" /></b></div>
+            <div class="dmc-row"><span>Receivables</span><b class="rec"><x-hex.money :amount="$summary->receivables" /></b></div>
         </div>
 
         <div class="card card-pad dash-mini-card dash-chart-card" wire:key="share-fair-chart-{{ $chartRefreshKey }}">
@@ -80,7 +77,7 @@
                 <div class="kpi-icon"><x-hex.icon name="layers" /></div>
                 <h3>Shareholder Contribution vs Fair Share</h3>
             </div>
-            <p class="hint mb-2">All-time settlement position for selected units</p>
+            <p class="hint mb-2">Settlement position for selected units in range</p>
             <div class="chart-wrap" id="chartShareFairContainer" data-chart='@json($chartData)'>
                 <div class="chart-canvas-box" wire:ignore>
                     <canvas id="chartShareFair"></canvas>
@@ -107,6 +104,16 @@
             ctx.stroke();
         });
         return ctx.createPattern(c, 'repeat');
+    };
+
+    window.formatInr = function(value) {
+        const rounded = Math.round(Number(value) || 0);
+        const negative = rounded < 0;
+        const abs = Math.abs(rounded).toString();
+        const lastThree = abs.slice(-3);
+        const rest = abs.slice(0, -3);
+        const grouped = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (rest ? ',' : '') + lastThree;
+        return (negative ? '−' : '') + '₹' + grouped;
     };
 
     window.renderShareFairChart = function() {
@@ -138,10 +145,21 @@
             options: {
                 maintainAspectRatio: false,
                 responsive: true,
-                plugins: { legend: { display: true, position: 'bottom' } },
+                plugins: {
+                    legend: { display: true, position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${window.formatInr(ctx.raw)}`,
+                        },
+                    },
+                },
                 scales: {
                     x: { stacked: true, grid: { display: false } },
-                    y: { stacked: true, grid: { color: '#EEF1F4' } },
+                    y: {
+                        stacked: true,
+                        grid: { color: '#EEF1F4' },
+                        ticks: { callback: (v) => window.formatInr(v) },
+                    },
                 },
             },
         });

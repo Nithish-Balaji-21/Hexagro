@@ -29,8 +29,6 @@ class BankingIndex extends Component
 
     public string $formTlLimit = '';
 
-    public string $formAlamUtilised = '';
-
     public function mount(BankingService $bankingService): void
     {
         $position = $bankingService->current();
@@ -43,7 +41,6 @@ class BankingIndex extends Component
             $this->formCcUtilised = (string) $s->cc_utilised;
             $this->formTermLoan = (string) $s->term_loan;
             $this->formTlLimit = (string) $s->tl_limit;
-            $this->formAlamUtilised = (string) $s->alam_utilised;
         } else {
             $this->formAsOf = now()->toDateString();
             $this->formTlLimit = '13500000';
@@ -56,7 +53,7 @@ class BankingIndex extends Component
         $this->showForm = true;
     }
 
-    public function save(): void
+    public function save(BankingService $bankingService): void
     {
         $this->authorize('create', BankingSnapshot::class);
 
@@ -67,7 +64,6 @@ class BankingIndex extends Component
             'formCcUtilised' => ['required', 'numeric', 'min:0'],
             'formTermLoan' => ['required', 'numeric', 'min:0'],
             'formTlLimit' => ['required', 'numeric', 'min:0'],
-            'formAlamUtilised' => ['required', 'numeric'],
         ]);
 
         BankingSnapshot::query()->create([
@@ -77,7 +73,7 @@ class BankingIndex extends Component
             'cc_utilised' => $validated['formCcUtilised'],
             'term_loan' => $validated['formTermLoan'],
             'tl_limit' => $validated['formTlLimit'],
-            'alam_utilised' => $validated['formAlamUtilised'],
+            'alam_utilised' => $bankingService->alamUtilisedAsOf($validated['formAsOf']),
             'created_by' => auth()->id(),
         ]);
 

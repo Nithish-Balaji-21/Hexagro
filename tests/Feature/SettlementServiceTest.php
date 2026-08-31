@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\CostCenter;
 use App\Models\Entity;
-use App\Models\HistoricalAlamExpense;
 use App\Models\SettlementAdjustment;
 use App\Models\User;
 use App\Services\SettlementService;
@@ -44,43 +43,6 @@ class SettlementServiceTest extends TestCase
             'Shareholder - Vellingiri',
         ], $names);
         $this->assertTrue(collect($result->partners)->every(fn ($partner) => Money::cmp($partner->ubiShare, '0') === 0));
-    }
-
-    public function test_folds_historical_alam_into_fibre_alam_share_for_jagadeesan_and_jagadeshwaran(): void
-    {
-        $this->seed(DatabaseSeeder::class);
-
-        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
-
-        HistoricalAlamExpense::factory()->create([
-            'txn_date' => '2026-04-04',
-            'account' => 'Employee Salaries',
-            'description' => 'Weekly labor wages',
-            'amount' => '7359.00',
-            'created_by' => $admin->id,
-        ]);
-        HistoricalAlamExpense::factory()->create([
-            'txn_date' => '2026-05-22',
-            'account' => 'Raw Materials',
-            'description' => 'Angel Traders',
-            'amount' => '62540.00',
-            'created_by' => $admin->id,
-        ]);
-
-        $historicalTotal = (string) HistoricalAlamExpense::query()->sum('amount');
-        $folded = Money::mul($historicalTotal, (string) config('hexagro.hist_alam_share_pct'));
-        $expectedShare = Money::mul($folded, '0.5');
-
-        $fibre = CostCenter::query()->where('name', 'Fibre Unit')->firstOrFail();
-        $result = app(SettlementService::class)->forCostCenter($fibre);
-
-        $byName = collect($result->partners)->keyBy(fn ($partner) => $partner->entity->name);
-
-        $this->assertSame(0, Money::cmp($byName['Shareholder - Jagadeesan']->alamShare, $expectedShare));
-        $this->assertSame(0, Money::cmp($byName['Shareholder - Jagadeshwaran']->alamShare, $expectedShare));
-        $this->assertSame(0, Money::cmp($byName['Shareholder - Vellingiri']->alamShare, Money::zero()));
-        $this->assertSame(0, Money::cmp($byName['Vikas']->alamShare, Money::zero()));
-        $this->assertSame(0, Money::cmp($result->alamNet, $folded));
     }
 
     public function test_applies_overall_adjustment_from_jagadeshwaran_to_vellingiri(): void

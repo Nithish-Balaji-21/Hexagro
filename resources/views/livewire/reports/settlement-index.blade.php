@@ -27,11 +27,11 @@
                         @foreach ($fundingRows as $row)
                             <tr wire:key="fb-{{ $row->entity->id }}">
                                 <td>{{ $row->entity->name }}</td>
-                                <td class="num amt"><x-hex.money :amount="$row->expenses" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->rawMaterials" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->otherDebits" :decimals="2" /></td>
-                                <td class="num amt rec"><x-hex.money :amount="$row->credits" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->entityTotal" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->expenses" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->rawMaterials" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->otherDebits" /></td>
+                                <td class="num amt rec"><x-hex.money :amount="$row->credits" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->entityTotal" /></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -56,10 +56,10 @@
                         @foreach ($overall as $row)
                             <tr wire:key="ov-{{ $row->entity->id }}">
                                 <td>{{ $row->entity->short_name }}</td>
-                                <td class="num amt"><x-hex.money :amount="$row->overallNet" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->adjustment" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->adjustedNet" :decimals="2" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->outstanding" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->overallNet" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->adjustment" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->adjustedNet" /></td>
+                                <td class="num amt"><x-hex.money :amount="$row->outstanding" /></td>
                                 <td><x-hex.net-badge :amount="$row->outstanding" /></td>
                             </tr>
                         @endforeach
@@ -72,11 +72,11 @@
             @foreach ($unitSettlement->partners as $partner)
                 <div class="partner-card" wire:key="p-{{ $partner->entity->id }}">
                     <div class="pname">{{ $partner->entity->short_name }} <span>{{ number_format((float) $partner->sharePct * 100, 1) }}% share</span></div>
-                    <div class="pc-row"><span>Paid directly</span><b><x-hex.money :amount="$partner->paidDirectly" :decimals="2" /></b></div>
-                    <div class="pc-row"><span>Alam share</span><b><x-hex.money :amount="$partner->alamShare" :decimals="2" /></b></div>
-                    <div class="pc-row"><span>UBI share</span><b><x-hex.money :amount="$partner->ubiShare" :decimals="2" /></b></div>
-                    <div class="pc-row font-semibold border-t border-[var(--border)] mt-1 pt-2"><span>Contribution</span><b><x-hex.money :amount="$partner->contribution" :decimals="2" /></b></div>
-                    <div class="pc-row font-semibold"><span>Fair share</span><b><x-hex.money :amount="$partner->fairShare" :decimals="2" /></b></div>
+                    <div class="pc-row"><span>Paid directly</span><b><x-hex.money :amount="$partner->paidDirectly" /></b></div>
+                    <div class="pc-row"><span>Alam share</span><b><x-hex.money :amount="$partner->alamShare" /></b></div>
+                    <div class="pc-row"><span>UBI share</span><b><x-hex.money :amount="$partner->ubiShare" /></b></div>
+                    <div class="pc-row font-semibold border-t border-[var(--border)] mt-1 pt-2"><span>Contribution</span><b><x-hex.money :amount="$partner->contribution" /></b></div>
+                    <div class="pc-row font-semibold"><span>Fair share</span><b><x-hex.money :amount="$partner->fairShare" /></b></div>
                     <x-hex.net-badge :amount="$partner->outstanding" />
                 </div>
             @endforeach
@@ -92,7 +92,7 @@
                 @foreach ($suggestedTransfers as $i => $transfer)
                     <div class="transfer-suggest-row" wire:key="st-{{ $i }}">
                         <span><b>{{ $transfer->from->short_name }}</b> → <b>{{ $transfer->to->short_name }}</b></span>
-                        <span class="font-mono"><x-hex.money :amount="$transfer->amount" :decimals="2" /></span>
+                        <span class="font-mono"><x-hex.money :amount="$transfer->amount" /></span>
                         @can('create', App\Models\SettlementLedgerEntry::class)
                             <button type="button" wire:click="openLedgerForm({{ $transfer->from->id }}, {{ $transfer->to->id }}, '{{ $transfer->amount }}')" class="hex-btn hex-btn-sm">Log payment</button>
                         @endcan
@@ -120,7 +120,7 @@
                                 @if ($isOverall)<td>{{ $entry->unit_scope }}</td>@endif
                                 <td>{{ $entry->fromEntity->short_name }}</td>
                                 <td>{{ $entry->toEntity->short_name }}</td>
-                                <td class="num amt"><x-hex.money :amount="$entry->amount" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$entry->amount" /></td>
                                 <td class="desc-cell">{{ $entry->note }}</td>
                                 @can('delete', $entry)
                                     <td class="num"><button type="button" wire:click="deleteLedgerEntry({{ $entry->id }})" wire:confirm="Remove entry?" class="tbl-icon-btn danger"><x-hex.icon name="trash" /></button></td>

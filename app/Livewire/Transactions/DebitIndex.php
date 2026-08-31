@@ -9,6 +9,7 @@ use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\DebitTransaction;
 use App\Models\Entity;
+use App\Services\Import\ImportRunService;
 use App\Support\DateRange;
 use App\Support\UnitScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -158,13 +159,30 @@ class DebitIndex extends Component
         $this->dispatch('toast', message: 'Debit deleted.');
     }
 
+    public function revertLastImport(ImportRunService $importRunService): void
+    {
+        $this->authorize('create', DebitTransaction::class);
+
+        $run = $importRunService->latestForKind('debit');
+
+        if ($run === null) {
+            $this->dispatch('toast', message: 'No import to revert.');
+
+            return;
+        }
+
+        $deleted = $importRunService->revert($run);
+        $this->dispatch('toast', message: "Reverted last import — {$deleted} row(s) removed.");
+        $this->dispatch('import-completed');
+    }
+
     public function closeForm(): void
     {
         $this->showForm = false;
         $this->resetForm();
     }
 
-    public function render(UnitScope $unitScope)
+    public function render(UnitScope $unitScope, ImportRunService $importRunService)
     {
         $range = $this->dateRange();
 
@@ -175,6 +193,7 @@ class DebitIndex extends Component
             'entities' => Entity::query()->active()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
+            'lastImportRun' => $importRunService->latestForKind('debit'),
         ]);
     }
 

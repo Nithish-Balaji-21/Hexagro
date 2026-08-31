@@ -24,7 +24,7 @@ class OutstandingSheetImporter
 
                 $previewRows[] = new ImportPreviewRow(
                     rowNumber: $rowNumber,
-                    date: '',
+                    date: $validated['txn_date'],
                     costCenter: (string) ($row['cost_center'] ?? ''),
                     detail: $validated['party'].' ('.$validated['kind'].')',
                     amount: $validated['amount'],
@@ -33,7 +33,7 @@ class OutstandingSheetImporter
             } catch (\Throwable $exception) {
                 $previewRows[] = new ImportPreviewRow(
                     rowNumber: $rowNumber,
-                    date: '',
+                    date: (string) ($row['date'] ?? ''),
                     costCenter: (string) ($row['cost_center'] ?? ''),
                     detail: trim((string) ($row['party'] ?? '')),
                     amount: (string) ($row['amount'] ?? ''),
@@ -72,6 +72,8 @@ class OutstandingSheetImporter
                 }
 
                 $validated = $this->validateRow($row);
+                $asOfDate = now()->toDateString();
+                $txnDate = $validated['txn_date'];
 
                 if ($validated['kind'] === 'payable') {
                     if (! $dryRun) {
@@ -84,6 +86,8 @@ class OutstandingSheetImporter
                                 'total_billed' => $validated['amount'],
                                 'total_paid' => '0.00',
                                 'notes' => $validated['notes'],
+                                'as_of_date' => $asOfDate,
+                                'txn_date' => $txnDate,
                             ],
                         );
                     }
@@ -98,6 +102,8 @@ class OutstandingSheetImporter
                                 'total_invoiced' => $validated['amount'],
                                 'total_received' => '0.00',
                                 'notes' => $validated['notes'],
+                                'as_of_date' => $asOfDate,
+                                'txn_date' => $txnDate,
                             ],
                         );
                     }
@@ -114,6 +120,7 @@ class OutstandingSheetImporter
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported,
+                    created: $result->created,
                     skipped: $result->skipped,
                     errors: $result->errors + 1,
                     messages: [...$result->messages, "Row {$rowNumber}: {$exception->getMessage()}"],
@@ -126,7 +133,7 @@ class OutstandingSheetImporter
 
     /**
      * @param  array<string, mixed>  $row
-     * @return array{party: string, kind: string, cost_center_id: int, amount: string, notes: ?string}
+     * @return array{party: string, kind: string, cost_center_id: int, amount: string, notes: ?string, txn_date: string}
      */
     private function validateRow(array $row): array
     {
@@ -146,12 +153,18 @@ class OutstandingSheetImporter
             throw new \InvalidArgumentException('Amount is required and must be greater than zero.');
         }
 
+        $rawDate = $row['date'] ?? $row['txn_date'] ?? null;
+        $txnDate = ($rawDate !== null && trim((string) $rawDate) !== '')
+            ? $this->lookup->parseDate($rawDate)
+            : now()->toDateString();
+
         return [
             'party' => $party,
             'kind' => $kind,
             'cost_center_id' => $this->lookup->costCenterId((string) ($row['cost_center'] ?? '')),
             'amount' => $amount,
             'notes' => trim((string) ($row['notes'] ?? '')) ?: null,
+            'txn_date' => $txnDate,
         ];
     }
 }

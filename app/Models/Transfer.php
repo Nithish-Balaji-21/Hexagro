@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'note',
     'amount',
     'created_by',
+    'import_run_id',
 ])]
 class Transfer extends Model
 {

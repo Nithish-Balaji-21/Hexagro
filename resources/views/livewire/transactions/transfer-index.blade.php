@@ -2,6 +2,10 @@
     <x-hex.page-head title="Transfers" subtitle="Money moved between shareholders, Alam and bank accounts">
         @can('create', App\Models\Transfer::class)
             <x-slot:actions>
+                <button type="button" wire:click="$dispatch('open-import', { kind: 'transfers' })" class="hex-btn">
+                    <x-hex.icon name="upload" />
+                    Import
+                </button>
                 <button type="button" wire:click="openCreateForm" class="hex-btn hex-btn-primary">
                     <x-hex.icon name="plus" /> Add Transfer
                 </button>
@@ -10,7 +14,18 @@
     </x-hex.page-head>
 
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" />
-    <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
+    <div class="unit-tabs-header-bar mb-4">
+        <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
+        <x-hex.range-picker
+            :preset="$rangePreset"
+            :from="$rangeFrom"
+            :to="$rangeTo"
+            :picker-open="$rangePickerOpen"
+            :picker-from="$pickerFrom"
+            :picker-to="$pickerTo"
+            :picker-preset="$pickerPreset"
+        />
+    </div>
 
     <div class="card mb-4">
         <div class="card-head"><h3>Ledger — Net Position per Entity</h3></div>
@@ -22,7 +37,7 @@
                         <tr wire:key="net-{{ $row['entity']->id }}">
                             <td>{{ $row['entity']->short_name }}</td>
                             <td class="num amt {{ (float) $row['net'] > 0 ? 'rec' : ((float) $row['net'] < 0 ? 'pay' : '') }}">
-                                <x-hex.money :amount="$row['net']" :decimals="2" />
+                                <x-hex.money :amount="$row['net']" />
                             </td>
                         </tr>
                     @endforeach
@@ -71,7 +86,7 @@
                                 <td>{{ $transfer->fromEntity->short_name }}</td>
                                 <td>{{ $transfer->toEntity->short_name }}</td>
                                 <td class="desc-cell">{{ $transfer->note }}</td>
-                                <td class="num amt"><x-hex.money :amount="$transfer->amount" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$transfer->amount" /></td>
                                 @can('update', $transfer)
                                     <td class="num">
                                         <div class="row-actions">
@@ -89,7 +104,7 @@
             @endif
         </div>
         @if ($transfers->count())
-            <div class="table-foot"><span>Total: <b class="font-mono"><x-hex.money :amount="$totalAmount" :decimals="2" /></b></span></div>
+            <div class="table-foot"><span>Total: <b class="font-mono"><x-hex.money :amount="$totalAmount" /></b></span></div>
             <div class="px-4 pb-4">{{ $transfers->links() }}</div>
         @endif
     </div>

@@ -16,24 +16,25 @@
     </div>
 
     <div class="kpi-grid mb-5" style="grid-template-columns: repeat(3, 1fr);">
-        <x-hex.kpi-card label="Total Billed" :value="\App\Support\Inr::format($totalBilled, 2)" />
-        <x-hex.kpi-card label="Total Paid" :value="\App\Support\Inr::format($totalPaid, 2)" />
-        <x-hex.kpi-card label="Outstanding" :value="\App\Support\Inr::format($totalOutstanding, 2)" />
+        <x-hex.kpi-card label="Total Billed" :value="\App\Support\Inr::format($totalBilled)" />
+        <x-hex.kpi-card label="Total Paid" :value="\App\Support\Inr::format($totalPaid)" />
+        <x-hex.kpi-card label="Outstanding" :value="\App\Support\Inr::format($totalOutstanding)" />
     </div>
 
     <div class="card">
         <div class="table-scroll">
             @if ($purchases->count())
                 <table class="data-table">
-                    <thead><tr><th>Vendor</th><th>Unit</th><th class="num">Billed</th><th class="num">Paid</th><th class="num">Balance</th><th>Notes</th>@can('create', App\Models\Purchase::class)<th class="num">Actions</th>@endcan</tr></thead>
+                    <thead><tr><th>Date</th><th>Vendor</th><th>Unit</th><th class="num">Billed</th><th class="num">Paid</th><th class="num">Balance</th><th>Notes</th>@can('create', App\Models\Purchase::class)<th class="num">Actions</th>@endcan</tr></thead>
                     <tbody>
                         @foreach ($purchases as $purchase)
                             <tr wire:key="pu-{{ $purchase->id }}">
+                                <td>{{ $purchase->txn_date?->format('d M Y') ?? $purchase->as_of_date?->format('d M Y') ?? '—' }}</td>
                                 <td>{{ $purchase->vendor_name }}</td>
                                 <td><x-hex.tag :unit="$purchase->costCenter->name" /></td>
-                                <td class="num amt"><x-hex.money :amount="$purchase->total_billed" :decimals="2" /></td>
-                                <td class="num amt rec"><x-hex.money :amount="$purchase->total_paid" :decimals="2" /></td>
-                                <td class="num amt pay"><x-hex.money :amount="$purchase->balance" :decimals="2" /></td>
+                                <td class="num amt"><x-hex.money :amount="$purchase->total_billed" /></td>
+                                <td class="num amt rec"><x-hex.money :amount="$purchase->total_paid" /></td>
+                                <td class="num amt pay"><x-hex.money :amount="$purchase->balance" /></td>
                                 <td class="desc-cell">{{ $purchase->notes }}</td>
                                 @can('update', $purchase)
                                     <td class="num"><div class="row-actions">
@@ -56,8 +57,9 @@
         <div class="modal-overlay show"><div class="modal">
             <div class="modal-head"><h3>{{ $editingId ? 'Edit Purchase' : 'Add Purchase' }}</h3><button type="button" wire:click="closeForm" class="tbl-icon-btn"><x-hex.icon name="x" /></button></div>
             <form wire:submit="save" class="modal-body"><div class="form-grid">
+                <label><span>Date</span><input type="date" wire:model="formDate"></label>
                 <label><span>Unit</span><select wire:model="formCostCenterId">@foreach($scopedUnits as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</select></label>
-                <label><span>Vendor</span><input type="text" wire:model="formVendor"></label>
+                <label class="span-2"><span>Vendor</span><input type="text" wire:model="formVendor"></label>
                 <label><span>Total Billed</span><input type="number" step="0.01" wire:model="formBilled"></label>
                 <label><span>Total Paid</span><input type="number" step="0.01" wire:model="formPaid"></label>
                 <label class="span-2"><span>Notes</span><input type="text" wire:model="formNotes"></label>

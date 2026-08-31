@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'description',
     'amount',
     'created_by',
+    'import_run_id',
     'updated_by',
 ])]
 class DebitTransaction extends Model

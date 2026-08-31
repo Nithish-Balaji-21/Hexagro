@@ -25,7 +25,7 @@ class Dashboard extends Component
         $unitIds = $unitScope->selectedUnitIds();
         $range = $this->dateRange();
         $summary = $dashboardService->summary($range, $unitIds);
-        $shareholderBars = $dashboardService->shareholderBars($unitIds);
+        $shareholderBars = $dashboardService->shareholderBars($unitIds, $range);
         $chartData = $this->chartPayload($shareholderBars);
 
         return view('livewire.dashboard', [

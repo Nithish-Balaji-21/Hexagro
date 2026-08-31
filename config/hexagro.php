@@ -21,8 +21,6 @@ return [
         'Washing Unit' => ['jagadeesan', 'jagadeshwaran', 'vellingiri'],
     ],
 
-    'hist_alam_share_pct' => 0.66666,
-
     'unit_shareholders' => [
         'Fibre Unit' => ['jagadeesan', 'jagadeshwaran', 'vellingiri', 'vikas'],
         'Chips Unit' => ['jagadeesan', 'jagadeshwaran', 'vellingiri'],

@@ -41,16 +41,10 @@ class DashboardService
             ->selectRaw('COALESCE(SUM(CASE WHEN credit_type != ? THEN amount ELSE 0 END), 0) as others', [CreditType::Sales->value])
             ->first();
 
-        $banking = $this->bankingService->current();
+        $banking = $this->bankingService->asOf($range->to ?? now()->toDateString());
 
-        $payables = Purchase::query()
-            ->whereIn('cost_center_id', $costCenterIds)
-            ->whereNotNull('total_billed')
-            ->sum('balance');
-
-        $receivables = Sale::query()
-            ->whereIn('cost_center_id', $costCenterIds)
-            ->sum('balance');
+        $payables = $this->outstandingPayables($costCenterIds, $range->to ?? now()->toDateString());
+        $receivables = $this->outstandingReceivables($costCenterIds, $range->to ?? now()->toDateString());
 
         return new DashboardSummary(
             debitExpense: Money::of($debits->expenses ?? 0),
@@ -62,8 +56,8 @@ class DashboardService
             bankCcUtilised: $banking?->snapshot->cc_utilised,
             bankTlLimit: $banking?->snapshot->tl_limit,
             bankTermLoan: $banking?->snapshot->term_loan,
-            payables: Money::of($payables ?? 0),
-            receivables: Money::of($receivables ?? 0),
+            payables: Money::of($payables),
+            receivables: Money::of($receivables),
         );
     }
 
@@ -71,8 +65,13 @@ class DashboardService
      * @param  list<int>  $costCenterIds
      * @return list<ShareholderBar>
      */
-    public function shareholderBars(array $costCenterIds): array
+    public function shareholderBars(array $costCenterIds, DateRange $range): array
     {
+        $fibreUnitId = (int) CostCenter::query()
+            ->where('name', config('hexagro.fibre_unit_name'))
+            ->value('id');
+        $includeVikas = in_array($fibreUnitId, $costCenterIds, true);
+
         $labels = Entity::query()
             ->shareholders()
             ->active()
@@ -82,6 +81,7 @@ class DashboardService
                 $entity->configKey() => $entity->short_name ?? $entity->name,
             ])
             ->filter(fn (string $label, ?string $key): bool => $key !== null && $label !== '')
+            ->when(! $includeVikas, fn ($collection) => $collection->except(['vikas']))
             ->all();
 
         $totals = array_fill_keys(array_values($labels), [
@@ -92,6 +92,7 @@ class DashboardService
         foreach ($costCenterIds as $costCenterId) {
             $settlement = $this->settlementService->forCostCenter(
                 CostCenter::query()->findOrFail($costCenterId),
+                $range,
             );
 
             foreach ($settlement->partners as $partner) {
@@ -112,5 +113,66 @@ class DashboardService
             contribution: $totals[$name]['contribution'],
             fairShare: $totals[$name]['fairShare'],
         ))->all();
+    }
+
+    /**
+     * @param  list<int>  $costCenterIds
+     */
+    private function outstandingPayables(array $costCenterIds, string $asOfDate): string
+    {
+        $total = Money::zero();
+
+        foreach ($costCenterIds as $costCenterId) {
+            $latestTxnDate = Purchase::query()
+                ->where('cost_center_id', $costCenterId)
+                ->whereNotNull('txn_date')
+                ->where('txn_date', '<=', $asOfDate)
+                ->max('txn_date');
+
+            if ($latestTxnDate === null) {
+                continue;
+            }
+
+            $total = Money::add(
+                $total,
+                Purchase::query()
+                    ->where('cost_center_id', $costCenterId)
+                    ->where('txn_date', $latestTxnDate)
+                    ->whereNotNull('total_billed')
+                    ->sum('balance'),
+            );
+        }
+
+        return $total;
+    }
+
+    /**
+     * @param  list<int>  $costCenterIds
+     */
+    private function outstandingReceivables(array $costCenterIds, string $asOfDate): string
+    {
+        $total = Money::zero();
+
+        foreach ($costCenterIds as $costCenterId) {
+            $latestTxnDate = Sale::query()
+                ->where('cost_center_id', $costCenterId)
+                ->whereNotNull('txn_date')
+                ->where('txn_date', '<=', $asOfDate)
+                ->max('txn_date');
+
+            if ($latestTxnDate === null) {
+                continue;
+            }
+
+            $total = Money::add(
+                $total,
+                Sale::query()
+                    ->where('cost_center_id', $costCenterId)
+                    ->where('txn_date', $latestTxnDate)
+                    ->sum('balance'),
+            );
+        }
+
+        return $total;
     }
 }

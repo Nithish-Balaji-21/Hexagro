@@ -59,6 +59,15 @@ class Entity extends Model
         return $this->hasMany(Transfer::class, 'to_entity_id');
     }
 
+    public function getShortNameAttribute(?string $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return trim(str_replace(['(JW)', ' (JW)'], '', $value));
+    }
+
     public function configKey(): ?string
     {
         /** @var array<string, string> $keys */
@@ -80,6 +89,67 @@ class Entity extends Model
     public function isAlam(): bool
     {
         return $this->entity_type === EntityType::NonShareholderFunder;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function ledgerBookOrder(): array
+    {
+        return [
+            'Shareholder - Jagadeesan',
+            'Shareholder - Jagadeshwaran',
+            'Shareholder - Vellingiri',
+            'Vikas',
+            'Payable to Alam',
+            'Union Bank - CC',
+            'Union Bank - Current',
+            'Union Bank - Term Loan',
+        ];
+    }
+
+    /**
+     * @return list<array{label: string, names: list<string>}>
+     */
+    public static function ledgerBookGroups(): array
+    {
+        return [
+            [
+                'label' => 'Shareholders',
+                'names' => [
+                    'Shareholder - Jagadeesan',
+                    'Shareholder - Jagadeshwaran',
+                    'Shareholder - Vellingiri',
+                    'Vikas',
+                ],
+            ],
+            [
+                'label' => 'Alam',
+                'names' => ['Payable to Alam'],
+            ],
+            [
+                'label' => 'Bank',
+                'names' => [
+                    'Union Bank - CC',
+                    'Union Bank - Current',
+                    'Union Bank - Term Loan',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Entity>
+     */
+    public static function ledgerBookEntities(): \Illuminate\Support\Collection
+    {
+        $entities = self::query()->active()->get()->keyBy('name');
+        $ordered = collect(self::ledgerBookOrder())
+            ->map(fn (string $name): ?Entity => $entities->get($name))
+            ->filter()
+            ->values();
+
+        return $ordered->isNotEmpty() ? $ordered : $entities->sortBy('name')->values();
     }
 
     /**

@@ -17,7 +17,6 @@
         'Finance' => [
             ['id' => 'banking', 'label' => 'Banking', 'route' => 'banking', 'icon' => 'bank'],
             ['id' => 'entityLedgers', 'label' => 'Ledger Book', 'route' => 'ledger-book', 'icon' => 'history'],
-            ['id' => 'historicalAlam', 'label' => 'Historical Alam Expenses', 'route' => 'historical-alam', 'icon' => 'history'],
         ],
     ];
 

@@ -23,7 +23,7 @@ class BankingSeeder extends Seeder
                 'current_balance' => '274018.00',
                 'term_loan' => '13326000.00',
                 'tl_limit' => '13500000.00',
-                'alam_utilised' => '1461586.25',
+                'alam_utilised' => '0.00',
                 'created_by' => $admin->id,
             ],
         );

@@ -10,6 +10,7 @@ readonly class ImportSheetResult
     public function __construct(
         public string $sheet,
         public int $imported = 0,
+        public int $created = 0,
         public int $skipped = 0,
         public int $errors = 0,
         public array $messages = [],
@@ -20,6 +21,7 @@ readonly class ImportSheetResult
         return new self(
             sheet: $this->sheet,
             imported: $this->imported,
+            created: $this->created,
             skipped: $this->skipped,
             errors: $this->errors,
             messages: [...$this->messages, $message],

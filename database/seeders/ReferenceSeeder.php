@@ -53,7 +53,7 @@ class ReferenceSeeder extends Seeder
     {
         foreach ([
             ['name' => 'Shareholder - Jagadeesan', 'short_name' => 'Jagadeesan', 'entity_type' => EntityType::Shareholder],
-            ['name' => 'Shareholder - Jagadeshwaran', 'short_name' => 'Jagadeshwaran (JW)', 'entity_type' => EntityType::Shareholder],
+            ['name' => 'Shareholder - Jagadeshwaran', 'short_name' => 'Jagadeshwaran', 'entity_type' => EntityType::Shareholder],
             ['name' => 'Shareholder - Vellingiri', 'short_name' => 'Vellingiri', 'entity_type' => EntityType::Shareholder],
             ['name' => 'Vikas', 'short_name' => 'Vikas', 'entity_type' => EntityType::Shareholder],
             ['name' => 'Payable to Alam', 'short_name' => 'Alam', 'entity_type' => EntityType::NonShareholderFunder],

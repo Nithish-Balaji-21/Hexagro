@@ -9,6 +9,7 @@ use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\CreditTransaction;
 use App\Models\Entity;
+use App\Services\Import\ImportRunService;
 use App\Support\DateRange;
 use App\Support\UnitScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -154,13 +155,30 @@ class CreditIndex extends Component
         $this->dispatch('toast', message: 'Credit deleted.');
     }
 
+    public function revertLastImport(ImportRunService $importRunService): void
+    {
+        $this->authorize('create', CreditTransaction::class);
+
+        $run = $importRunService->latestForKind('credit');
+
+        if ($run === null) {
+            $this->dispatch('toast', message: 'No import to revert.');
+
+            return;
+        }
+
+        $deleted = $importRunService->revert($run);
+        $this->dispatch('toast', message: "Reverted last import — {$deleted} row(s) removed.");
+        $this->dispatch('import-completed');
+    }
+
     public function closeForm(): void
     {
         $this->showForm = false;
         $this->resetForm();
     }
 
-    public function render(UnitScope $unitScope)
+    public function render(UnitScope $unitScope, ImportRunService $importRunService)
     {
         $range = $this->dateRange();
 
@@ -171,6 +189,7 @@ class CreditIndex extends Component
             'entities' => Entity::query()->active()->orderBy('name')->get(),
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
+            'lastImportRun' => $importRunService->latestForKind('credit'),
         ]);
     }
 

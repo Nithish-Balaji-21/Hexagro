@@ -38,7 +38,13 @@ trait WithDateRange
         $range = $this->dateRange();
         $this->pickerFrom = $range->from ?? '';
         $this->pickerTo = $range->to ?? '';
-        $this->pickerPreset = $range->preset === 'custom' ? 'custom' : 'custom';
+        $knownPresets = array_merge(
+            array_filter(DateRange::QUICK_PRESETS, fn (string $p): bool => $p !== 'custom'),
+            DateRange::SIDEBAR_PRESETS,
+        );
+        $this->pickerPreset = in_array($range->preset, $knownPresets, true)
+            ? $range->preset
+            : 'custom';
         $this->rangePickerOpen = true;
     }
 

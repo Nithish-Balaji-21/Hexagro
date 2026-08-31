@@ -7,16 +7,22 @@ use Illuminate\Support\Carbon;
 final class DateRange
 {
     /** @var list<string> */
+    public const QUICK_PRESETS = [
+        '7d',
+        '1m',
+        'ytd',
+        'custom',
+    ];
+
+    /** @var list<string> */
     public const SIDEBAR_PRESETS = [
         'today',
-        'this_week',
-        'this_month',
-        'this_year',
         'yesterday',
+        'this_week',
         'last_week',
+        'this_month',
         'last_month',
-        'last_year',
-        'custom',
+        'this_year',
     ];
 
     public function __construct(
@@ -54,6 +60,7 @@ final class DateRange
             ),
             '7d' => new self('7d', $asOf->copy()->subDays(6)->toDateString(), $latest),
             '1m' => new self('1m', $asOf->copy()->subMonth()->addDay()->toDateString(), $latest),
+            'ytd' => new self('ytd', $fyStart, $latest),
             'custom' => new self('custom', $from ?: $fyStart, $to ?: $latest),
             default => new self('ytd', $fyStart, $latest),
         };
@@ -72,6 +79,7 @@ final class DateRange
             'last_year' => 'Last year',
             '7d' => 'Last 7 days',
             '1m' => 'Last 1 month',
+            'ytd' => 'YTD',
             'custom' => ($this->from && $this->to)
                 ? Inr::formatDate($this->from).' – '.Inr::formatDate($this->to)
                 : 'Pick a date range',
@@ -88,10 +96,34 @@ final class DateRange
         return 'Pick a date range';
     }
 
+    public function displayLabel(): string
+    {
+        if (! $this->from || ! $this->to) {
+            return 'Pick a date range';
+        }
+
+        if ($this->from === $this->to) {
+            return Inr::formatDateShort($this->from);
+        }
+
+        return Inr::formatDateShort($this->from).' – '.Inr::formatDateShort($this->to);
+    }
+
     public function containsDate(string $date): bool
     {
         return ($this->from === null || $date >= $this->from)
             && ($this->to === null || $date <= $this->to);
+    }
+
+    public static function quickPresetLabel(string $preset): string
+    {
+        return match ($preset) {
+            '7d' => '7D',
+            '1m' => '1M',
+            'ytd' => 'YTD',
+            'custom' => 'Custom',
+            default => ucfirst($preset),
+        };
     }
 
     public static function sidebarLabel(string $preset): string
@@ -105,6 +137,9 @@ final class DateRange
             'last_month' => 'Last Month',
             'this_year' => 'This Year',
             'last_year' => 'Last Year',
+            '7d' => '7D',
+            '1m' => '1M',
+            'ytd' => 'YTD',
             'custom' => 'Custom',
             default => ucfirst(str_replace('_', ' ', $preset)),
         };

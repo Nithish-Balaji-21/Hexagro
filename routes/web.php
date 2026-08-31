@@ -4,7 +4,6 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\Finance\BankingIndex;
 use App\Livewire\Finance\EntityLedgerIndex;
-use App\Livewire\Finance\HistoricalAlamIndex;
 use App\Livewire\Import\ImportIndex;
 use App\Livewire\Reports\MonthlySpendIndex;
 use App\Livewire\Reports\PurchasesIndex;
@@ -32,7 +31,6 @@ Route::middleware(['auth', 'unit.scope'])->group(function (): void {
     Route::get('/sales', SalesIndex::class)->name('sales');
     Route::get('/banking', BankingIndex::class)->name('banking');
     Route::get('/ledger-book', EntityLedgerIndex::class)->name('ledger-book');
-    Route::get('/historical-alam', HistoricalAlamIndex::class)->name('historical-alam');
     Route::get('/import', ImportIndex::class)->name('import');
     Route::get('/import/template/{kind}', function (string $kind) {
         abort_unless(auth()->user()?->isAdmin(), 403);

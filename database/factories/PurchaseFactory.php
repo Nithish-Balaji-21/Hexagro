@@ -24,6 +24,8 @@ class PurchaseFactory extends Factory
             'total_billed' => $billed,
             'total_paid' => fake()->randomFloat(2, 0, $billed),
             'notes' => fake()->optional()->sentence(),
+            'as_of_date' => now()->toDateString(),
+            'txn_date' => now()->toDateString(),
         ];
     }
 

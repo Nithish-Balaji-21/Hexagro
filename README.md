@@ -7,7 +7,7 @@ Laravel + Livewire application for tracking debits, credits, transfers, and comp
 - **Dashboard** — summary charts and key metrics
 - **Transactions** — Debit, Credit, and Transfer entry
 - **Reports** — Monthly Spend, Settlement, Purchases, Sales
-- **Finance** — Banking snapshots, Entity Ledger, Historical Alam expenses
+- **Finance** — Banking snapshots, Entity Ledger
 - **Excel import** — bulk workbook import with downloadable templates (admin only)
 
 ## Tech stack
@@ -137,7 +137,6 @@ routes/web.php       Application routes
 | `/sales` | Sales |
 | `/banking` | Banking snapshots |
 | `/ledger-book` | Entity ledger |
-| `/historical-alam` | Historical Alam expenses |
 | `/import` | Excel import (admin) |
 
 ## Artisan commands

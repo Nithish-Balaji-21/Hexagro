@@ -19,10 +19,8 @@
 
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" action="see another unit" />
 
-    <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
-
-    <div class="filter-bar filter-bar-range">
-        <span class="fb-label"><x-hex.icon name="calendar" /> Range</span>
+    <div class="unit-tabs-header-bar mb-4">
+        <x-hex.unit-tabs :units="$scopedUnits" :active="$unitTab" />
         <x-hex.range-picker
             :preset="$rangePreset"
             :from="$rangeFrom"
@@ -77,7 +75,7 @@
                                 <td>{{ str($transaction->credit_type->name)->headline() }}</td>
                                 <td>{{ $transaction->receivedTo->name }}</td>
                                 <td class="desc-cell" title="{{ $transaction->description }}">{{ $transaction->description }}</td>
-                                <td class="num amt rec">+<x-hex.money :amount="$transaction->amount" :decimals="2" /></td>
+                                <td class="num amt rec">+<x-hex.money :amount="$transaction->amount" /></td>
                                 @can('update', $transaction)
                                     <td class="num">
                                         <div class="row-actions">
@@ -104,7 +102,7 @@
 
         @if ($transactions->count())
             <div class="table-foot">
-                <span>Total for filtered rows: <b class="font-mono rec">+<x-hex.money :amount="$totalAmount" :decimals="2" /></b></span>
+                <span>Total for filtered rows: <b class="font-mono rec">+<x-hex.money :amount="$totalAmount" /></b></span>
             </div>
             <div class="px-4 pb-4">{{ $transactions->links() }}</div>
         @endif

@@ -37,6 +37,8 @@ class PurchasesIndex extends Component
 
     public string $formVendor = '';
 
+    public string $formDate = '';
+
     public string $formBilled = '';
 
     public string $formPaid = '';
@@ -68,6 +70,7 @@ class PurchasesIndex extends Component
         $this->editingId = $purchase->id;
         $this->formCostCenterId = (string) $purchase->cost_center_id;
         $this->formVendor = $purchase->vendor_name;
+        $this->formDate = $purchase->txn_date?->toDateString() ?? $purchase->as_of_date?->toDateString() ?? now()->toDateString();
         $this->formBilled = $purchase->total_billed !== null ? (string) $purchase->total_billed : '';
         $this->formPaid = (string) $purchase->total_paid;
         $this->formNotes = $purchase->notes ?? '';
@@ -79,6 +82,7 @@ class PurchasesIndex extends Component
         $validated = $this->validate([
             'formCostCenterId' => ['required', Rule::exists('cost_centers', 'id')],
             'formVendor' => ['required', 'string', 'max:150'],
+            'formDate' => ['required', 'date'],
             'formBilled' => ['nullable', 'numeric', 'min:0'],
             'formPaid' => ['required', 'numeric', 'min:0'],
             'formNotes' => ['nullable', 'string', 'max:500'],
@@ -87,6 +91,8 @@ class PurchasesIndex extends Component
         $payload = [
             'cost_center_id' => (int) $validated['formCostCenterId'],
             'vendor_name' => $validated['formVendor'],
+            'txn_date' => $validated['formDate'],
+            'as_of_date' => $validated['formDate'],
             'total_billed' => $validated['formBilled'] !== '' ? $validated['formBilled'] : null,
             'total_paid' => $validated['formPaid'],
             'notes' => $validated['formNotes'] ?: null,
@@ -137,7 +143,7 @@ class PurchasesIndex extends Component
 
     private function purchases(): LengthAwarePaginator
     {
-        return $this->baseQuery()->with('costCenter')->orderBy('vendor_name')->paginate(10);
+        return $this->baseQuery()->with('costCenter')->orderByDesc('txn_date')->orderBy('vendor_name')->paginate(10);
     }
 
     private function baseQuery(): Builder
@@ -162,6 +168,7 @@ class PurchasesIndex extends Component
         $this->editingId = null;
         $this->formCostCenterId = (string) (CostCenter::query()->orderBy('name')->value('id') ?? '');
         $this->formVendor = '';
+        $this->formDate = now()->toDateString();
         $this->formBilled = '';
         $this->formPaid = '0';
         $this->formNotes = '';

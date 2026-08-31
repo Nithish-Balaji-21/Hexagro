@@ -12,14 +12,14 @@ final class Inr
             return '—';
         }
 
-        $value = (float) $amount;
+        $value = round(abs((float) $amount));
 
         if (! is_finite($value)) {
             return '—';
         }
 
-        $negative = $value < 0;
-        $value = abs($value);
+        $negative = (float) $amount < 0;
+        $decimals = 0;
 
         $formatted = number_format($value, $decimals, '.', '');
         [$intPart, $decPart] = array_pad(explode('.', $formatted, 2), 2, '');
@@ -45,5 +45,10 @@ final class Inr
     public static function formatDatePicker(string $date): string
     {
         return Carbon::parse($date)->format('d/m/Y');
+    }
+
+    public static function formatDateShort(string $date): string
+    {
+        return Carbon::parse($date)->format('M j, Y');
     }
 }

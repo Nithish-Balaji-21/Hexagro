@@ -12,7 +12,7 @@ class TransferSheetImporter
      * @param  list<array<string, mixed>>  $debitRows
      * @param  list<array<string, mixed>>  $creditRows
      */
-    public function import(array $debitRows, array $creditRows, bool $dryRun = false): ImportSheetResult
+    public function import(array $debitRows, array $creditRows, bool $dryRun = false, ?int $importRunId = null): ImportSheetResult
     {
         $result = new ImportSheetResult(sheet: 'Transfers');
 
@@ -28,6 +28,7 @@ class TransferSheetImporter
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported,
+                    created: $result->created,
                     skipped: $result->skipped,
                     errors: $result->errors + 1,
                     messages: [...$result->messages, "Unpaired debit transfer on {$debit['date']} ({$debit['cost_center']}) for {$debit['amount']}"],
@@ -50,8 +51,10 @@ class TransferSheetImporter
                     'created_by' => $this->lookup->adminUserId(),
                 ];
 
+                $created = 0;
+
                 if (! $dryRun) {
-                    Transfer::query()->firstOrCreate(
+                    $record = Transfer::query()->firstOrCreate(
                         [
                             'txn_date' => $attributes['txn_date'],
                             'cost_center_id' => $attributes['cost_center_id'],
@@ -59,13 +62,18 @@ class TransferSheetImporter
                             'to_entity_id' => $attributes['to_entity_id'],
                             'amount' => $attributes['amount'],
                         ],
-                        $attributes,
+                        array_merge($attributes, ['import_run_id' => $importRunId]),
                     );
+
+                    if ($record->wasRecentlyCreated) {
+                        $created = 1;
+                    }
                 }
 
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported + 1,
+                    created: $result->created + $created,
                     skipped: $result->skipped,
                     errors: $result->errors,
                     messages: $result->messages,
@@ -74,6 +82,7 @@ class TransferSheetImporter
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported,
+                    created: $result->created,
                     skipped: $result->skipped,
                     errors: $result->errors + 1,
                     messages: [...$result->messages, "Debit transfer row {$debitIndex}: {$exception->getMessage()}"],
@@ -89,6 +98,7 @@ class TransferSheetImporter
             $result = new ImportSheetResult(
                 sheet: $result->sheet,
                 imported: $result->imported,
+                created: $result->created,
                 skipped: $result->skipped,
                 errors: $result->errors + 1,
                 messages: [...$result->messages, "Unpaired credit transfer on {$credit['date']} ({$credit['cost_center']}) to {$credit['entity']} for {$credit['amount']}"],

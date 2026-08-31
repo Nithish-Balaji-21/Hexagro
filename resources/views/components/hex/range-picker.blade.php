@@ -14,137 +14,155 @@
     $pTo = (string) ($pickerTo ?: ($pickerToVal ?? ($pickerTo ?? '')));
     $pPreset = (string) ($pickerPreset ?: ($pickerPresetVal ?? ($pickerPreset ?? 'custom')));
     $range = \App\Support\DateRange::fromState($preset, $from ?: null, $to ?: null);
-    $pickerRange = \App\Support\DateRange::fromState($pPreset, $pFrom ?: null, $pTo ?: null);
+    $quickActive = $isOpen || ! in_array($preset, ['7d', '1m', 'ytd'], true) ? 'custom' : $preset;
 @endphp
 
 <div
     {{ $attributes->merge(['class' => 'range-picker']) }}
     x-data="hexRangePicker"
 >
-    <div class="range-pills">
-        @foreach (['ytd' => 'YTD', '7d' => '7D', '1m' => '1M', 'custom' => 'Custom'] as $key => $label)
-            <button
-                type="button"
-                wire:click="setRangePreset('{{ $key }}')"
-                class="range-pill {{ $preset === $key ? 'active' : '' }}"
-            >
-                {{ $label }}
-            </button>
-        @endforeach
-    </div>
+    <div class="range-bar">
+        <div class="date-pill">
+            <x-hex.icon name="calendar" />
+            <span class="date-pill-text">{{ $range->displayLabel() }}</span>
+        </div>
 
-    <button type="button" wire:click="openRangePicker" class="range-label-btn">
-        {{ $range->label() }}
-    </button>
+        <div class="picker" x-ref="picker">
+            <div class="indicator" x-ref="indicator"></div>
+            @foreach (\App\Support\DateRange::QUICK_PRESETS as $key)
+                <button
+                    type="button"
+                    data-range="{{ $key }}"
+                    wire:click="setRangePreset('{{ $key }}')"
+                    :class="{ 'active': activeQuickPreset === '{{ $key }}' }"
+                    class="{{ $quickActive === $key ? 'active' : '' }}"
+                >
+                    {{ \App\Support\DateRange::quickPresetLabel($key) }}
+                </button>
+            @endforeach
+        </div>
 
-    @if ($isOpen)
-        <div class="range-popover-backdrop" wire:click="cancelRangePicker"></div>
-        <div class="range-popover hex-card" @click.stop>
-            <div class="range-popover-body">
-                <aside class="range-sidebar">
-                    @foreach (\App\Support\DateRange::SIDEBAR_PRESETS as $sidebarPreset)
+        @if ($isOpen)
+            <div class="range-panel-backdrop" wire:click="cancelRangePicker"></div>
+            <div class="panel open" @click.stop>
+                <div class="panel-head" x-text="panelHeadText"></div>
+
+                <div class="presets-row">
+                    @foreach (\App\Support\DateRange::SIDEBAR_PRESETS as $key)
                         <button
                             type="button"
-                            wire:click="setPickerPreset('{{ $sidebarPreset }}')"
-                            class="range-sidebar-item {{ $pPreset === $sidebarPreset ? 'active' : '' }}"
+                            wire:click="setPickerPreset('{{ $key }}')"
+                            class="{{ $pPreset === $key ? 'is-selected' : '' }}"
                         >
-                            {{ \App\Support\DateRange::sidebarLabel($sidebarPreset) }}
+                            {{ \App\Support\DateRange::sidebarLabel($key) }}
                         </button>
                     @endforeach
-                </aside>
+                </div>
 
-                <div class="range-calendar">
-                    <div class="calendar-dual-wrapper">
-                        <!-- Left Month -->
-                        <div class="calendar-month-box">
-                            <div class="calendar-header">
-                                <button type="button" @click="prevLeftMonth" class="cal-nav-btn">&lsaquo;</button>
-                                <div class="cal-selects">
-                                    <select x-model="leftMonth" @change="onLeftMonthChange">
-                                        <template x-for="(mName, idx) in months" :key="idx">
-                                            <option :value="idx" x-text="mName"></option>
-                                        </template>
-                                    </select>
-                                    <select x-model="leftYear" @change="onLeftYearChange">
-                                        <template x-for="y in years" :key="y">
-                                            <option :value="y" x-text="y"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button type="button" @click="nextLeftMonth" class="cal-nav-btn">&rsaquo;</button>
+                <div class="months">
+                    <div class="month">
+                        <div class="month-nav">
+                            <button type="button" class="navbtn" @click="prevLeftMonth">&lsaquo;</button>
+                            <div class="month-year-selects">
+                                <select x-model.number="leftMonth" @change="updateRightFromLeft()" class="mselect">
+                                    <template x-for="(mName, idx) in monthNames" :key="'lm-' + idx">
+                                        <option :value="idx" x-text="mName" :selected="leftMonth === idx"></option>
+                                    </template>
+                                </select>
+                                <select x-model.number="leftYear" @change="updateRightFromLeft()" class="yselect">
+                                    <template x-for="y in yearOptions" :key="'ly-' + y">
+                                        <option :value="y" x-text="y" :selected="leftYear === y"></option>
+                                    </template>
+                                </select>
                             </div>
-                            <div class="calendar-weekdays">
-                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                            </div>
-                            <div class="calendar-days-grid">
-                                <template x-for="(cell, idx) in getMonthDays(leftYear, leftMonth)" :key="'L-' + idx">
-                                    <button
-                                        type="button"
-                                        @click="selectDate(cell.dateStr)"
-                                        :class="{
-                                            'cal-day': true,
-                                            'is-other': !cell.isCurrentMonth,
-                                            'is-start': isStart(cell.dateStr),
-                                            'is-end': isEnd(cell.dateStr),
-                                            'is-in-range': isInRange(cell.dateStr)
-                                        }"
-                                    >
-                                        <span x-text="cell.day"></span>
-                                    </button>
-                                </template>
-                            </div>
+                            <span class="navbtn hidden">&rsaquo;</span>
                         </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <template x-for="dow in dowLabels" :key="dow">
+                                        <th x-text="dow"></th>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(week, wIdx) in leftWeeks" :key="'L-' + wIdx">
+                                    <tr>
+                                        <template x-for="(cell, cIdx) in week" :key="'L-' + wIdx + '-' + cIdx">
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    @click="! cell.muted && selectDate(cell.dateStr)"
+                                                    @mouseenter="! cell.muted && previewDate(cell.dateStr)"
+                                                    @mouseleave="clearPreview()"
+                                                    :class="cell.muted ? 'day muted' : dayClasses(cell.dateStr)"
+                                                    :disabled="cell.muted"
+                                                    x-text="cell.day"
+                                                ></button>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <!-- Right Month -->
-                        <div class="calendar-month-box">
-                            <div class="calendar-header">
-                                <button type="button" @click="prevRightMonth" class="cal-nav-btn">&lsaquo;</button>
-                                <div class="cal-selects">
-                                    <select x-model="rightMonth" @change="onRightMonthChange">
-                                        <template x-for="(mName, idx) in months" :key="idx">
-                                            <option :value="idx" x-text="mName"></option>
-                                        </template>
-                                    </select>
-                                    <select x-model="rightYear" @change="onRightYearChange">
-                                        <template x-for="y in years" :key="y">
-                                            <option :value="y" x-text="y"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button type="button" @click="nextRightMonth" class="cal-nav-btn">&rsaquo;</button>
+                    <div class="month">
+                        <div class="month-nav">
+                            <span class="navbtn hidden">&lsaquo;</span>
+                            <div class="month-year-selects">
+                                <select x-model.number="rightMonth" @change="updateLeftFromRight()" class="mselect">
+                                    <template x-for="(mName, idx) in monthNames" :key="'rm-' + idx">
+                                        <option :value="idx" x-text="mName" :selected="rightMonth === idx"></option>
+                                    </template>
+                                </select>
+                                <select x-model.number="rightYear" @change="updateLeftFromRight()" class="yselect">
+                                    <template x-for="y in yearOptions" :key="'ry-' + y">
+                                        <option :value="y" x-text="y" :selected="rightYear === y"></option>
+                                    </template>
+                                </select>
                             </div>
-                            <div class="calendar-weekdays">
-                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                            </div>
-                            <div class="calendar-days-grid">
-                                <template x-for="(cell, idx) in getMonthDays(rightYear, rightMonth)" :key="'R-' + idx">
-                                    <button
-                                        type="button"
-                                        @click="selectDate(cell.dateStr)"
-                                        :class="{
-                                            'cal-day': true,
-                                            'is-other': !cell.isCurrentMonth,
-                                            'is-start': isStart(cell.dateStr),
-                                            'is-end': isEnd(cell.dateStr),
-                                            'is-in-range': isInRange(cell.dateStr)
-                                        }"
-                                    >
-                                        <span x-text="cell.day"></span>
-                                    </button>
-                                </template>
-                            </div>
+                            <button type="button" class="navbtn" @click="nextRightMonth">&rsaquo;</button>
                         </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <template x-for="dow in dowLabels" :key="'R-' + dow">
+                                        <th x-text="dow"></th>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(week, wIdx) in rightWeeks" :key="'R-' + wIdx">
+                                    <tr>
+                                        <template x-for="(cell, cIdx) in week" :key="'R-' + wIdx + '-' + cIdx">
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    @click="! cell.muted && selectDate(cell.dateStr)"
+                                                    @mouseenter="! cell.muted && previewDate(cell.dateStr)"
+                                                    @mouseleave="clearPreview()"
+                                                    :class="cell.muted ? 'day muted' : dayClasses(cell.dateStr)"
+                                                    :disabled="cell.muted"
+                                                    x-text="cell.day"
+                                                ></button>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel-foot">
+                    <div class="hint" x-text="hintText"></div>
+                    <div class="foot-actions">
+                        <button type="button" wire:click="cancelRangePicker" class="btn-cancel">Cancel</button>
+                        <button type="button" wire:click="applyRangePicker" class="btn-apply">Apply</button>
                     </div>
                 </div>
             </div>
-
-            <div class="range-popover-footer">
-                <span class="range-popover-dates" x-text="formattedRangeLabel()"></span>
-                <div class="range-popover-actions">
-                    <button type="button" wire:click="cancelRangePicker" class="btn btn-secondary btn-sm">Cancel</button>
-                    <button type="button" wire:click="applyRangePicker" class="btn btn-primary btn-sm">Apply</button>
-                </div>
-            </div>
-        </div>
-    @endif
+        @endif
+    </div>
 </div>

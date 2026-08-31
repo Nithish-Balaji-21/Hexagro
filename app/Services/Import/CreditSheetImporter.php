@@ -53,7 +53,7 @@ class CreditSheetImporter
     /**
      * @param  list<array<string, mixed>>  $rows
      */
-    public function import(array $rows, bool $dryRun = false): ImportSheetResult
+    public function import(array $rows, bool $dryRun = false, ?int $importRunId = null): ImportSheetResult
     {
         $result = new ImportSheetResult(sheet: 'Credit');
 
@@ -67,6 +67,7 @@ class CreditSheetImporter
                     $result = new ImportSheetResult(
                         sheet: $result->sheet,
                         imported: $result->imported,
+                        created: $result->created,
                         skipped: $result->skipped + 1,
                         errors: $result->errors,
                         messages: $result->messages,
@@ -79,6 +80,7 @@ class CreditSheetImporter
                     $result = new ImportSheetResult(
                         sheet: $result->sheet,
                         imported: $result->imported,
+                        created: $result->created,
                         skipped: $result->skipped + 1,
                         errors: $result->errors,
                         messages: $result->messages,
@@ -89,8 +91,10 @@ class CreditSheetImporter
 
                 $attributes = $this->validateRow($row);
 
+                $created = 0;
+
                 if (! $dryRun) {
-                    CreditTransaction::query()->firstOrCreate(
+                    $record = CreditTransaction::query()->firstOrCreate(
                         [
                             'txn_date' => $attributes['txn_date'],
                             'cost_center_id' => $attributes['cost_center_id'],
@@ -98,13 +102,18 @@ class CreditSheetImporter
                             'amount' => $attributes['amount'],
                             'description' => $attributes['description'],
                         ],
-                        $attributes,
+                        array_merge($attributes, ['import_run_id' => $importRunId]),
                     );
+
+                    if ($record->wasRecentlyCreated) {
+                        $created = 1;
+                    }
                 }
 
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported + 1,
+                    created: $result->created + $created,
                     skipped: $result->skipped,
                     errors: $result->errors,
                     messages: $result->messages,
@@ -113,6 +122,7 @@ class CreditSheetImporter
                 $result = new ImportSheetResult(
                     sheet: $result->sheet,
                     imported: $result->imported,
+                    created: $result->created,
                     skipped: $result->skipped,
                     errors: $result->errors + 1,
                     messages: [...$result->messages, "Row {$rowNumber}: {$exception->getMessage()}"],

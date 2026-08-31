@@ -11,10 +11,10 @@
     </span>
 @elseif ($value > 0)
     <span {{ $attributes->merge(['class' => 'net-badge receive']) }}>
-        <x-hex.icon name="up" /> To Receive · <x-hex.money :amount="$value" :decimals="2" />
+        <x-hex.icon name="up" /> To Receive · <x-hex.money :amount="$value" />
     </span>
 @else
     <span {{ $attributes->merge(['class' => 'net-badge pay']) }}>
-        <x-hex.icon name="down" /> To Pay · <x-hex.money :amount="abs($value)" :decimals="2" />
+        <x-hex.icon name="down" /> To Pay · <x-hex.money :amount="abs($value)" />
     </span>
 @endif

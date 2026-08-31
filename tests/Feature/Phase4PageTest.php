@@ -31,7 +31,6 @@ class Phase4PageTest extends TestCase
             'sales' => ['/sales', 'Sales'],
             'banking' => ['/banking', 'Banking'],
             'ledger book' => ['/ledger-book', 'Ledger Book'],
-            'historical alam' => ['/historical-alam', 'Historical Alam Expenses'],
         ];
     }
 

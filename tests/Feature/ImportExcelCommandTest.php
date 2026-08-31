@@ -115,9 +115,9 @@ class ImportExcelCommandTest extends TestCase
         $outstanding->fromArray([
             ['Outstanding payments (unpaid — informational, not part of spend or settlement)'],
             [],
-            ['Item / Party', 'Cost Center', 'Amount (₹)', 'Notes'],
-            ['Sakthi Mariamman', 'Washing Unit', 484690, ''],
-            ['HP Cocos', 'Fibre Unit', 346000, 'Outstanding vendor bill'],
+            ['Date', 'Item / Party', 'Cost Center', 'Amount (₹)', 'Notes'],
+            ['2026-06-15', 'Sakthi Mariamman', 'Washing Unit', 484690, ''],
+            ['2026-06-15', 'HP Cocos', 'Fibre Unit', 346000, 'Outstanding vendor bill'],
         ]);
 
         $directory = dirname($path);

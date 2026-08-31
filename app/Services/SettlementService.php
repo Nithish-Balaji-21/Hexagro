@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\CostCenter;
 use App\Models\Entity;
-use App\Models\HistoricalAlamExpense;
 use App\Models\SettlementAdjustment;
 use App\Models\SettlementLedgerEntry;
 use App\Models\ShareholderShare;
@@ -13,6 +12,7 @@ use App\Services\Dto\OverallPartnerSettlement;
 use App\Services\Dto\PartnerSettlement;
 use App\Services\Dto\SuggestedTransfer;
 use App\Services\Dto\UnitSettlement;
+use App\Support\DateRange;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 
@@ -20,9 +20,9 @@ class SettlementService
 {
     public function __construct(private FundingBreakdownService $fundingBreakdown) {}
 
-    public function forCostCenter(CostCenter $costCenter): UnitSettlement
+    public function forCostCenter(CostCenter $costCenter, ?DateRange $range = null): UnitSettlement
     {
-        $rows = $this->fundingBreakdown->forCostCenter($costCenter);
+        $rows = $this->fundingBreakdown->forCostCenter($costCenter, $range);
         $shares = $this->currentShares($costCenter);
         $alamNet = $this->alamNet($costCenter, $rows);
         $ubiPool = $this->ubiPool($rows);
@@ -217,15 +217,8 @@ class SettlementService
     private function alamNet(CostCenter $costCenter, Collection $rows): string
     {
         $alamRow = $rows->first(fn (EntityFundingRow $row): bool => $row->entity->isAlam());
-        $alamNet = $alamRow?->entityTotal ?? Money::zero();
 
-        if ($costCenter->name === config('hexagro.fibre_unit_name')) {
-            $historical = HistoricalAlamExpense::query()->sum('amount');
-            $folded = Money::mul((string) $historical, (string) config('hexagro.hist_alam_share_pct', 0));
-            $alamNet = Money::add($alamNet, $folded);
-        }
-
-        return $alamNet;
+        return $alamRow?->entityTotal ?? Money::zero();
     }
 
     /**
