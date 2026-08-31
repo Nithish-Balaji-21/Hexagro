@@ -4,8 +4,11 @@ namespace App\Services\Import;
 
 use App\Enums\CreditType;
 use App\Enums\DebitCategory;
+use App\Enums\UserRole;
 use App\Models\CostCenter;
 use App\Models\Entity;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -41,8 +44,9 @@ class ExcelLookup
 
         $this->registerEntityAliases();
 
-        $this->adminUserId = User::query()->where('name', 'Jagadeesan')->value('id')
-            ?? throw new InvalidArgumentException('Admin user Jagadeesan must be seeded before importing.');
+        $this->adminUserId = auth()->id()
+            ?? User::query()->where('role', UserRole::Admin)->orderBy('id')->value('id')
+            ?? throw new InvalidArgumentException('An admin user must exist before importing.');
     }
 
     public function adminUserId(): int
@@ -149,12 +153,43 @@ class ExcelLookup
     /**
      * @return 'payable'|'receivable'|null
      */
-    public function outstandingKind(string $party): ?string
+    public function outstandingKind(string $party, ?string $type = null): ?string
     {
+        if ($type !== null && trim($type) !== '') {
+            return $this->parseOutstandingType($type);
+        }
+
         /** @var array<string, string> $kinds */
         $kinds = config('hexagro.outstanding_party_kinds', []);
+        $trimmed = trim($party);
 
-        return $kinds[trim($party)] ?? null;
+        if (isset($kinds[$trimmed])) {
+            return $kinds[$trimmed];
+        }
+
+        if (Sale::query()->where('customer_name', $trimmed)->exists()) {
+            return 'receivable';
+        }
+
+        if (Purchase::query()->where('vendor_name', $trimmed)->exists()) {
+            return 'payable';
+        }
+
+        return null;
+    }
+
+    /**
+     * @return 'payable'|'receivable'
+     */
+    public function parseOutstandingType(string $type): string
+    {
+        $normalized = mb_strtolower(trim($type));
+
+        return match ($normalized) {
+            'receivable', 'receivables', 'sales', 'sale' => 'receivable',
+            'payable', 'payables', 'purchase', 'purchases' => 'payable',
+            default => throw new InvalidArgumentException("Unknown outstanding type: {$type}"),
+        };
     }
 
     private function registerEntityAliases(): void

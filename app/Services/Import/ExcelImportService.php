@@ -103,8 +103,7 @@ class ExcelImportService
         }
 
         if (in_array('outstanding', $sheets, true)) {
-            $outstandingResult = $this->outstandingImporter->import($outstandingRows, dryRun: true);
-            $results[] = $this->summaryPreview('Outstanding', $outstandingResult);
+            $results[] = $this->outstandingImporter->preview($outstandingRows);
         }
 
         return $results;

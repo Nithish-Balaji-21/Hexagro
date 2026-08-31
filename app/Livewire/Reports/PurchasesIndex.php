@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Reports;
 
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\Purchase;
@@ -20,6 +21,7 @@ use Livewire\WithPagination;
 class PurchasesIndex extends Component
 {
     use AuthorizesRequests;
+    use WithImportRefresh;
     use WithPagination;
     use WithUnitScopeRefresh;
 

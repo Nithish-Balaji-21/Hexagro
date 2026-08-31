@@ -17,8 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ReferenceSeeder::class,
             BankingSeeder::class,
-            HistoricalAlamSeeder::class,
-            SettlementAdjustmentSeeder::class,
         ]);
     }
 }

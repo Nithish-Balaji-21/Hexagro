@@ -4,6 +4,7 @@ namespace App\Livewire\Transactions;
 
 use App\Enums\CreditType;
 use App\Livewire\Concerns\WithDateRange;
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\CreditTransaction;
@@ -25,6 +26,7 @@ class CreditIndex extends Component
 {
     use AuthorizesRequests;
     use WithDateRange;
+    use WithImportRefresh;
     use WithPagination;
     use WithUnitScopeRefresh;
 

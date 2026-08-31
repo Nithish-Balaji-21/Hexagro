@@ -64,7 +64,9 @@ class AuthTest extends TestCase
         $user = User::query()->where('name', 'Jagadeesan')->firstOrFail();
 
         $this->actingAs($user)
-            ->post('/logout')
+            ->get(route('dashboard'));
+
+        $this->post(route('logout'), ['_token' => session()->token()])
             ->assertRedirect(route('login'));
 
         $this->assertGuest();
@@ -96,7 +98,9 @@ class AuthTest extends TestCase
         $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
 
         $this->actingAs($admin)
-            ->post(route('switch-user'))
+            ->get(route('dashboard'));
+
+        $this->post(route('switch-user'), ['_token' => session()->token()])
             ->assertRedirect(route('login'));
 
         $this->assertGuest();
@@ -107,7 +111,9 @@ class AuthTest extends TestCase
         $viewer = User::query()->where('name', 'Vikas')->firstOrFail();
 
         $this->actingAs($viewer)
-            ->post(route('switch-user'))
+            ->get(route('dashboard'));
+
+        $this->post(route('switch-user'), ['_token' => session()->token()])
             ->assertForbidden();
     }
 }

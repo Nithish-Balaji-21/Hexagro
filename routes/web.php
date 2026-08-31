@@ -13,6 +13,7 @@ use App\Livewire\Reports\SettlementIndex;
 use App\Livewire\Transactions\CreditIndex;
 use App\Livewire\Transactions\DebitIndex;
 use App\Livewire\Transactions\TransferIndex;
+use App\Services\Import\ImportTemplateService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,11 @@ Route::middleware(['auth', 'unit.scope'])->group(function (): void {
     Route::get('/ledger-book', EntityLedgerIndex::class)->name('ledger-book');
     Route::get('/historical-alam', HistoricalAlamIndex::class)->name('historical-alam');
     Route::get('/import', ImportIndex::class)->name('import');
+    Route::get('/import/template/{kind}', function (string $kind) {
+        abort_unless(auth()->user()?->isAdmin(), 403);
+
+        return app(ImportTemplateService::class)->download($kind);
+    })->name('import.template');
 
     Route::post('/logout', function () {
         Auth::logout();

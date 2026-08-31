@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Reports;
 
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Models\CostCenter;
 use App\Models\Entity;
@@ -24,6 +25,7 @@ use Livewire\Component;
 class SettlementIndex extends Component
 {
     use AuthorizesRequests;
+    use WithImportRefresh;
     use WithUnitScopeRefresh;
 
     /** cost center id or 'overall' */
@@ -157,6 +159,13 @@ class SettlementIndex extends Component
         $ledgerEntries = $this->ledgerEntries($isOverall, $unitIds);
         $shareholders = Entity::query()->shareholders()->orderBy('name')->get();
 
+        $chartData = $fundingRows
+            ->filter(fn (EntityFundingRow $row): bool => Money::cmp($row->entityTotal, '0') !== 0)
+            ->map(fn (EntityFundingRow $row): array => [
+                'label' => $row->entity->short_name,
+                'value' => (float) $row->entityTotal,
+            ])->values()->all();
+
         return view('livewire.reports.settlement-index', [
             'scopedUnits' => CostCenter::query()->whereIn('id', $unitIds)->orderBy('name')->get(),
             'allSelected' => $allSelected,
@@ -168,12 +177,9 @@ class SettlementIndex extends Component
             'ledgerEntries' => $ledgerEntries,
             'shareholders' => $shareholders,
             'scopeLabel' => $unitScope->scopeLabel(),
-            'chartData' => $fundingRows
-                ->filter(fn (EntityFundingRow $row): bool => Money::cmp($row->entityTotal, '0') !== 0)
-                ->map(fn (EntityFundingRow $row): array => [
-                    'label' => $row->entity->short_name,
-                    'value' => (float) $row->entityTotal,
-                ])->values()->all(),
+            'chartData' => $chartData,
+            'importRefreshVersion' => $this->importRefreshVersion,
+            'chartRefreshKey' => md5(json_encode($chartData).$this->unitScopeVersion.$this->importRefreshVersion.$this->selectedTab),
         ]);
     }
 

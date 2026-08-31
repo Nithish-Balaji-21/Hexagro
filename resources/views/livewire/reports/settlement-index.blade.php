@@ -38,7 +38,7 @@
                 </table>
             </div>
         </div>
-        <div class="card card-pad" id="chartSummaryContainer" data-chart='@json($chartData)'>
+        <div class="card card-pad" wire:key="settlement-chart-{{ $chartRefreshKey }}" id="chartSummaryContainer" data-chart='@json($chartData)'>
             <div class="card-head" style="border:none;padding:0 0 12px"><h3>Funding Mix</h3></div>
             <div class="chart-canvas-box" wire:ignore>
                 <canvas id="chartSummary"></canvas>
@@ -168,6 +168,11 @@
     document.removeEventListener('livewire:navigated', window.renderSummaryChart);
     document.addEventListener('livewire:navigated', window.renderSummaryChart);
     Livewire.hook('morphed', () => {
+        if (document.getElementById('chartSummaryContainer')) {
+            window.renderSummaryChart();
+        }
+    });
+    Livewire.on('chart-data-updated', () => {
         if (document.getElementById('chartSummaryContainer')) {
             window.renderSummaryChart();
         }

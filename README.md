@@ -1,58 +1,186 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Hexagro Shareholder Settlement
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel + Livewire application for tracking debits, credits, transfers, and computing shareholder settlement across Hexagro's three business units: **Fibre**, **Chips**, and **Washing**.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Dashboard** — summary charts and key metrics
+- **Transactions** — Debit, Credit, and Transfer entry
+- **Reports** — Monthly Spend, Settlement, Purchases, Sales
+- **Finance** — Banking snapshots, Entity Ledger, Historical Alam expenses
+- **Excel import** — bulk workbook import with downloadable templates (admin only)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Layer | Technology |
+|---|---|
+| Backend | PHP 8.3+, Laravel 13, Livewire 3 |
+| Database | MySQL 8.0.16+ |
+| Frontend | Tailwind CSS 4, Vite, Chart.js |
+| Import | PhpSpreadsheet |
 
-## Learning Laravel
+## Requirements
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP 8.3+
+- Composer
+- Node.js 20+
+- MySQL 8.0.16+
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Configure database credentials in `.env`:
 
-## Contributing
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=hexagro_shareholder
+DB_USERNAME=root
+DB_PASSWORD=your_password
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Then run migrations and build assets:
 
-## Code of Conduct
+```bash
+php artisan migrate --seed
+npm install && npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Alternatively, use the composer shortcut (installs dependencies, generates key, migrates, and builds):
 
-## Security Vulnerabilities
+```bash
+composer run setup
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Environment
+
+Key variables (see `.env.example` for the full list):
+
+| Variable | Purpose |
+|---|---|
+| `APP_NAME` | Application name (default: Hexagro) |
+| `DB_*` | MySQL connection |
+| `SESSION_DRIVER` | Session storage (default: `database`) |
+
+## Running locally
+
+Terminal 1:
+
+```bash
+php artisan serve
+```
+
+Terminal 2:
+
+```bash
+npm run dev
+```
+
+Open http://localhost:8000 — the login page is at `/`.
+
+Seeded users (from `ReferenceSeeder`): Jagadeesan (admin), Jagadeshwaran, Vellingiri, Vikas (viewers). Passwordless login selects a user by name.
+
+## Production deployment
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+Additional checklist:
+
+- Set `APP_ENV=production` and `APP_DEBUG=false`
+- Ensure `APP_KEY` is set and kept secret
+- Point the web server document root to `public/`
+- Configure MySQL credentials in the server `.env`
+
+## Project structure
+
+```
+app/
+  Livewire/          UI pages (dashboard, reports, transactions, import)
+  Services/          SettlementService, FundingBreakdownService, import pipeline
+  Models/            Eloquent models and SQL views
+  Console/Commands/  Import, ledger rebuild, settlement validation
+config/
+  hexagro.php        Alam attribution, UBI participants, fiscal year, tolerances
+database/
+  migrations/        Database schema (source of truth)
+  seeders/           Reference data (users, entities, cost centers, shares)
+resources/views/
+  livewire/          Blade templates for Livewire components
+routes/web.php       Application routes
+```
+
+## Routes
+
+| Path | Page |
+|---|---|
+| `/` | Login |
+| `/dashboard` | Dashboard |
+| `/debit` | Debit transactions |
+| `/credit` | Credit transactions |
+| `/transfers` | Transfers |
+| `/monthly-spend` | Monthly spend report |
+| `/settlement` | Settlement report |
+| `/purchases` | Purchases |
+| `/sales` | Sales |
+| `/banking` | Banking snapshots |
+| `/ledger-book` | Entity ledger |
+| `/historical-alam` | Historical Alam expenses |
+| `/import` | Excel import (admin) |
+
+## Artisan commands
+
+```bash
+php artisan hexagro:import-excel {file}     # Bulk Excel import (--dry-run, --only=debit,credit,...)
+php artisan hexagro:rebuild-ledger            # Rebuild ledger entries (--entity=id)
+php artisan hexagro:validate-settlement       # Settlement smoke check
+```
+
+## Domain summary
+
+Hexagro tracks money flowing through **8 funding entities** (4 shareholders, Payable to Alam, 3 Union Bank accounts) across **3 cost centers** (Fibre, Chips, Washing).
+
+Settlement is computed dynamically — nothing is stored except actual shareholder-to-shareholder payments in the settlement ledger and manual adjustments.
+
+**Contribution** per shareholder per unit:
+
+```
+contribution = paid_directly + alam_share + ubi_share
+```
+
+- **Paid directly** — debits, raw materials, and transfers attributed to the shareholder entity
+- **Alam share** — proportional share of Alam's net position (attribution in `config/hexagro.php`)
+- **UBI share** — equal split of Union Bank totals among eligible partners (Vikas excluded)
+
+**Net position**:
+
+```
+net = contribution − fair_share
+fair_share = unit_total_cost × ownership_pct
+```
+
+Ownership percentages come from `shareholder_shares` (latest `effective_from` on or before today). The fiscal year starts in April (`fiscal_year_start_month = 4`).
+
+Settlement ledger entries and manual adjustments update outstanding balances. A position is **balanced** when outstanding is within ₹1.00 (`settlement_balanced_tolerance`).
+
+Core logic lives in:
+
+- `App\Services\SettlementService`
+- `App\Services\FundingBreakdownService`
+- `config/hexagro.php`
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT

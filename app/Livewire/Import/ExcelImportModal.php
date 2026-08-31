@@ -25,7 +25,7 @@ class ExcelImportModal extends Component
     /** @var list<array{sheet: string, rows: list<array{rowNumber: int, date: string, costCenter: string, detail: string, amount: string, valid: bool, error: ?string}>}> */
     public array $previewResults = [];
 
-    public bool $skipErrors = true;
+    public bool $skipErrors = false;
 
     public ?string $storedPath = null;
 
@@ -101,6 +101,12 @@ class ExcelImportModal extends Component
         $this->authorize('create', DebitTransaction::class);
 
         if ($this->storedPath === null) {
+            return;
+        }
+
+        if ($this->errorCount() > 0 && ! $this->skipErrors) {
+            $this->dispatch('toast', message: "Import blocked: {$this->errorCount()} row(s) have validation errors. Fix them or enable skipping error rows.");
+
             return;
         }
 
@@ -183,7 +189,7 @@ class ExcelImportModal extends Component
     {
         $this->step = 1;
         $this->previewResults = [];
-        $this->skipErrors = true;
+        $this->skipErrors = false;
         $this->workbook = null;
         $this->storedPath = null;
     }

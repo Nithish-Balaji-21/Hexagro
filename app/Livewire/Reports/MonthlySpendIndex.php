@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Reports;
 
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Services\MonthlySpendService;
 use App\Support\FiscalYear;
@@ -15,6 +16,7 @@ use Livewire\Component;
 #[Title('Monthly Spend')]
 class MonthlySpendIndex extends Component
 {
+    use WithImportRefresh;
     use WithUnitScopeRefresh;
 
     public string $unitFilter = '';
@@ -55,6 +57,8 @@ class MonthlySpendIndex extends Component
             'allSelected' => $unitScope->isAllSelected(),
             'chartLabels' => collect($chartLabels)->pluck('label')->map(fn (string $l): string => explode(' ', $l)[0])->all(),
             'chartData' => $chartData,
+            'importRefreshVersion' => $this->importRefreshVersion,
+            'chartRefreshKey' => md5(json_encode($chartData).$this->unitScopeVersion.$this->importRefreshVersion.$this->unitFilter.$this->monthFilter),
         ]);
     }
 }

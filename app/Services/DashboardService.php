@@ -7,6 +7,7 @@ use App\Enums\DebitCategory;
 use App\Models\CostCenter;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
+use App\Models\Entity;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Services\Dto\DashboardSummary;
@@ -72,12 +73,16 @@ class DashboardService
      */
     public function shareholderBars(array $costCenterIds): array
     {
-        $labels = [
-            'jagadeesan' => 'Jagadeesan',
-            'jagadeshwaran' => 'Jagadeshwaran',
-            'vellingiri' => 'Vellingiri',
-            'vikas' => 'Vikas',
-        ];
+        $labels = Entity::query()
+            ->shareholders()
+            ->active()
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (Entity $entity): array => [
+                $entity->configKey() => $entity->short_name ?? $entity->name,
+            ])
+            ->filter(fn (string $label, ?string $key): bool => $key !== null && $label !== '')
+            ->all();
 
         $totals = array_fill_keys(array_values($labels), [
             'contribution' => Money::zero(),

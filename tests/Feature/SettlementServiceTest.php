@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\CostCenter;
 use App\Models\Entity;
 use App\Models\HistoricalAlamExpense;
+use App\Models\SettlementAdjustment;
+use App\Models\User;
 use App\Services\SettlementService;
 use App\Support\Money;
 use Database\Seeders\DatabaseSeeder;
@@ -48,6 +50,23 @@ class SettlementServiceTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        HistoricalAlamExpense::factory()->create([
+            'txn_date' => '2026-04-04',
+            'account' => 'Employee Salaries',
+            'description' => 'Weekly labor wages',
+            'amount' => '7359.00',
+            'created_by' => $admin->id,
+        ]);
+        HistoricalAlamExpense::factory()->create([
+            'txn_date' => '2026-05-22',
+            'account' => 'Raw Materials',
+            'description' => 'Angel Traders',
+            'amount' => '62540.00',
+            'created_by' => $admin->id,
+        ]);
+
         $historicalTotal = (string) HistoricalAlamExpense::query()->sum('amount');
         $folded = Money::mul($historicalTotal, (string) config('hexagro.hist_alam_share_pct'));
         $expectedShare = Money::mul($folded, '0.5');
@@ -67,6 +86,18 @@ class SettlementServiceTest extends TestCase
     public function test_applies_overall_adjustment_from_jagadeshwaran_to_vellingiri(): void
     {
         $this->seed(DatabaseSeeder::class);
+
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+        $from = Entity::query()->where('name', 'Shareholder - Jagadeshwaran')->firstOrFail();
+        $to = Entity::query()->where('name', 'Shareholder - Vellingiri')->firstOrFail();
+
+        SettlementAdjustment::factory()->create([
+            'from_entity_id' => $from->id,
+            'to_entity_id' => $to->id,
+            'amount' => '116980.00',
+            'note' => 'Manual true-up between Jagadeshwaran and Vellingiri',
+            'created_by' => $admin->id,
+        ]);
 
         $overall = app(SettlementService::class)->overall();
         $byName = $overall->keyBy(fn ($row) => $row->entity->name);

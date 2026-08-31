@@ -6,7 +6,9 @@ use App\Livewire\Import\ExcelImportModal;
 use App\Livewire\Import\ImportIndex;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
+use App\Models\Sale;
 use App\Models\User;
+use App\Services\Import\ExcelImportService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -88,11 +90,59 @@ class ExcelImportModalTest extends TestCase
         $this->actingAs($admin)
             ->get('/import')
             ->assertOk()
-            ->assertSee('Import Data');
+            ->assertSee('Import Data')
+            ->assertSee('Download import templates');
 
         Livewire::actingAs($admin)
             ->test(ImportIndex::class)
             ->assertSee('Import Data');
+    }
+
+    public function test_admin_can_download_debit_template(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('import.template', 'debit'))
+            ->assertOk()
+            ->assertHeader('content-disposition');
+    }
+
+    public function test_confirm_import_is_blocked_when_errors_exist_and_skip_disabled(): void
+    {
+        Storage::fake('local');
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+        $path = storage_path('framework/testing/hexagro-import-invalid-debit.xlsx');
+        $this->createInvalidDebitWorkbook($path);
+
+        Livewire::actingAs($admin)
+            ->test(ExcelImportModal::class)
+            ->call('open', 'debit')
+            ->set('workbook', UploadedFile::fake()->createWithContent('invalid.xlsx', (string) file_get_contents($path)))
+            ->call('preview')
+            ->assertSet('skipErrors', false)
+            ->assertSet('step', 2)
+            ->tap(function ($component): void {
+                $this->assertGreaterThan(0, $component->instance()->errorCount());
+            })
+            ->call('confirmImport')
+            ->assertSet('show', true);
+    }
+
+    public function test_outstanding_import_updates_existing_sale_on_reimport(): void
+    {
+        $path = storage_path('framework/testing/hexagro-outstanding-reimport.xlsx');
+        $this->createOutstandingWorkbook($path, 10000);
+
+        app(ExcelImportService::class)->import($path, dryRun: false, only: ['outstanding']);
+
+        $this->assertSame('10000.00', Sale::query()->where('customer_name', 'New Customer Ltd')->value('total_invoiced'));
+
+        $this->createOutstandingWorkbook($path, 25000);
+
+        app(ExcelImportService::class)->import($path, dryRun: false, only: ['outstanding']);
+
+        $this->assertSame('25000.00', Sale::query()->where('customer_name', 'New Customer Ltd')->value('total_invoiced'));
     }
 
     private function uploadedFixture(): UploadedFile
@@ -133,6 +183,64 @@ class ExcelImportModalTest extends TestCase
 
         $directory = dirname($path);
 
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        (new Xlsx($spreadsheet))->save($path);
+    }
+
+    private function createInvalidDebitWorkbook(string $path): void
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Debit');
+        $sheet->fromArray([
+            ['Date', 'Cost Center', 'Type', 'Account', 'Paid Through', 'Description', 'Total Amount (₹)'],
+            ['2026-06-15', 'Unknown Unit', 'Expense', 'Fuel Expense', 'Shareholder - Jagadeesan', 'Invalid row', 1000],
+        ]);
+
+        $directory = dirname($path);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        (new Xlsx($spreadsheet))->save($path);
+    }
+
+    private function createInvalidOutstandingWorkbook(string $path): void
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Outstanding');
+        $sheet->fromArray([
+            ['Outstanding payments'],
+            [],
+            ['Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
+            ['Unknown Party XYZ', 'Fibre Unit', 'Receivable', 1000, ''],
+        ]);
+
+        $directory = dirname($path);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        (new Xlsx($spreadsheet))->save($path);
+    }
+
+    private function createOutstandingWorkbook(string $path, int $amount): void
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Outstanding');
+        $sheet->fromArray([
+            ['Outstanding payments'],
+            [],
+            ['Item / Party', 'Cost Center', 'Type', 'Amount (₹)', 'Notes'],
+            ['New Customer Ltd', 'Fibre Unit', 'Receivable', $amount, ''],
+        ]);
+
+        $directory = dirname($path);
         if (! is_dir($directory)) {
             mkdir($directory, 0777, true);
         }

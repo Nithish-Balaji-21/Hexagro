@@ -25,7 +25,7 @@
         <x-hex.kpi-card label="Total Spend" :value="\App\Support\Inr::format($totalAll, 2)" />
     </div>
 
-    <div class="card mb-4" wire:key="ms-chart-card">
+    <div class="card mb-4" wire:key="ms-chart-{{ $chartRefreshKey }}">
         <div class="card-head"><h3>Monthly Spend Trend</h3></div>
         <div class="chart-wrap" id="chartMSContainer" data-chart='@json(['labels' => $chartLabels, 'data' => $chartData])'>
             <div class="chart-canvas-box" wire:ignore>
@@ -82,6 +82,11 @@
     document.removeEventListener('livewire:navigated', window.renderMSChart);
     document.addEventListener('livewire:navigated', window.renderMSChart);
     Livewire.hook('morphed', () => {
+        if (document.getElementById('chartMSContainer')) {
+            window.renderMSChart();
+        }
+    });
+    Livewire.on('chart-data-updated', () => {
         if (document.getElementById('chartMSContainer')) {
             window.renderMSChart();
         }

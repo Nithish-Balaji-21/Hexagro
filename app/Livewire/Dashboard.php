@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Livewire\Concerns\WithDateRange;
+use App\Livewire\Concerns\WithImportRefresh;
 use App\Livewire\Concerns\WithUnitScopeRefresh;
 use App\Services\DashboardService;
 use App\Services\Dto\ShareholderBar;
@@ -16,6 +17,7 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     use WithDateRange;
+    use WithImportRefresh;
     use WithUnitScopeRefresh;
 
     public function render(DashboardService $dashboardService, UnitScope $unitScope)
@@ -24,14 +26,17 @@ class Dashboard extends Component
         $range = $this->dateRange();
         $summary = $dashboardService->summary($range, $unitIds);
         $shareholderBars = $dashboardService->shareholderBars($unitIds);
+        $chartData = $this->chartPayload($shareholderBars);
 
         return view('livewire.dashboard', [
             'summary' => $summary,
             'shareholderBars' => $shareholderBars,
             'scopeLabel' => $unitScope->scopeLabel(),
             'allSelected' => $unitScope->isAllSelected(),
-            'chartData' => $this->chartPayload($shareholderBars),
+            'chartData' => $chartData,
             'unitScopeVersion' => $this->unitScopeVersion,
+            'importRefreshVersion' => $this->importRefreshVersion,
+            'chartRefreshKey' => md5(json_encode($chartData).$this->unitScopeVersion.$this->importRefreshVersion.$this->rangePreset.$this->rangeFrom.$this->rangeTo),
         ]);
     }
 
