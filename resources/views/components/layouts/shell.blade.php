@@ -6,6 +6,8 @@
         ['id' => 'debit', 'label' => 'Debit', 'route' => 'debit', 'icon' => 'down'],
         ['id' => 'credit', 'label' => 'Credit', 'route' => 'credit', 'icon' => 'up'],
         ['id' => 'transfers', 'label' => 'Transfers', 'route' => 'transfers', 'icon' => 'transfer'],
+        ['id' => 'payables', 'label' => 'Payables', 'route' => 'payables', 'icon' => 'outward'],
+        ['id' => 'receivables', 'label' => 'Receivables', 'route' => 'receivables', 'icon' => 'inward'],
     ];
 
     if (!$isVikas) {
@@ -23,9 +25,8 @@
         'Transactions' => $transactionItems,
         'Reports' => [
             ['id' => 'monthlySpend', 'label' => 'Monthly Spend', 'route' => 'monthly-spend', 'icon' => 'calendar'],
-            ['id' => 'settlement', 'label' => 'Summary & Settlement', 'route' => 'settlement', 'icon' => 'settlement'],
-            ['id' => 'purchases', 'label' => 'Purchases', 'route' => 'purchases', 'icon' => 'down'],
-            ['id' => 'sales', 'label' => 'Sales', 'route' => 'sales', 'icon' => 'trend'],
+            ['id' => 'summary', 'label' => 'Summary', 'route' => 'summary', 'icon' => 'chart'],
+            ['id' => 'settlement', 'label' => 'Settlements', 'route' => 'settlement', 'icon' => 'settlement'],
         ],
         'Finance' => $financeItems,
     ];

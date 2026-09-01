@@ -1,5 +1,5 @@
 <div>
-    <x-hex.page-head title="Banking" :subtitle="$position ? 'As of '.$position->snapshot->as_of_date->format('d M Y') : 'No snapshot recorded'">
+    <x-hex.page-head title="Banking" :subtitle="$position ? 'As of '.\App\Support\Inr::formatDatePicker($position->snapshot->as_of_date->toDateString()) : 'No snapshot recorded'">
         @can('create', App\Models\BankingSnapshot::class)
             <x-slot:actions>
                 <button type="button" wire:click="openCreateForm" class="hex-btn hex-btn-primary">
@@ -57,7 +57,7 @@
                     <tbody>
                         @foreach ($snapshots as $snap)
                             <tr wire:key="snap-{{ $snap->id }}">
-                                <td class="mono font-semibold">{{ $snap->as_of_date->format('d M Y') }}</td>
+                                <td class="mono font-semibold">{{ \App\Support\Inr::formatDatePicker($snap->as_of_date->toDateString()) }}</td>
                                 <td class="num amt"><x-hex.money :amount="$snap->current_balance" /></td>
                                 <td class="num amt"><x-hex.money :amount="$snap->cc_utilised" /></td>
                                 <td class="num amt"><x-hex.money :amount="$snap->cc_limit" /></td>
@@ -66,14 +66,18 @@
                                 <td>{{ $snap->createdBy->name ?? '—' }}</td>
                                 @can('create', App\Models\BankingSnapshot::class)
                                     <td class="num">
-                                        <div class="row-actions">
-                                            <button type="button" wire:click="openEditForm({{ $snap->id }})" class="tbl-icon-btn" title="Edit">
-                                                <x-hex.icon name="edit" />
-                                            </button>
-                                            <button type="button" wire:click="delete({{ $snap->id }})" wire:confirm="Delete this banking snapshot?" class="tbl-icon-btn danger" title="Delete">
-                                                <x-hex.icon name="trash" />
-                                            </button>
-                                        </div>
+                                        @if ($snap->id === $latestSnapshotId)
+                                            <div class="row-actions">
+                                                <button type="button" wire:click="openEditForm({{ $snap->id }})" class="tbl-icon-btn" title="Edit">
+                                                    <x-hex.icon name="edit" />
+                                                </button>
+                                                <button type="button" wire:click="delete({{ $snap->id }})" wire:confirm="Delete this banking snapshot?" class="tbl-icon-btn danger" title="Delete">
+                                                    <x-hex.icon name="trash" />
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="hint">—</span>
+                                        @endif
                                     </td>
                                 @endcan
                             </tr>
@@ -106,7 +110,7 @@
                         <div class="banking-as-of-card mb-4">
                             <label class="banking-field">
                                 <span class="as-of-label"><x-hex.icon name="calendar" /> As of date</span>
-                                <input type="date" wire:model="formAsOf" class="banking-input date-input">
+                                <input type="date" wire:model="formAsOf" @if($minAsOfDate) min="{{ $minAsOfDate }}" @endif max="{{ $maxAsOfDate }}" class="banking-input date-input">
                                 @error('formAsOf') <span class="field-error">{{ $message }}</span> @enderror
                             </label>
                         </div>

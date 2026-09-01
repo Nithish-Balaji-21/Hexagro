@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\DebitCategory;
 use App\Livewire\Layout\UnitSwitcher;
 use App\Livewire\Reports\SettlementIndex;
+use App\Livewire\Reports\SummaryIndex;
 use App\Livewire\Transactions\DebitIndex;
 use App\Models\CostCenter;
 use App\Models\DebitTransaction;
@@ -232,6 +233,18 @@ class UnitScopeTest extends TestCase
         app(UnitScope::class)->setSelectedUnits([$chipsId]);
 
         Livewire::test(SettlementIndex::class)
+            ->assertSet('selectedTab', (string) $chipsId);
+    }
+
+    public function test_summary_mount_uses_scoped_units_not_all_visible(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+        $chipsId = CostCenter::query()->where('name', 'Chips Unit')->value('id');
+
+        $this->actingAs($admin);
+        app(UnitScope::class)->setSelectedUnits([$chipsId]);
+
+        Livewire::test(SummaryIndex::class)
             ->assertSet('selectedTab', (string) $chipsId);
     }
 }

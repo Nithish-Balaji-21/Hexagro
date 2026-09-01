@@ -1,6 +1,13 @@
 import './bootstrap';
+import $ from 'jquery';
+import moment from 'moment';
+import 'daterangepicker';
 import './range-picker';
 import Chart from 'chart.js/auto';
+
+window.$ = $;
+window.jQuery = $;
+window.moment = moment;
 
 window.Chart = Chart;
 

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'daterangepicker/daterangepicker.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -919,6 +920,28 @@
         color: var(--receive);
     }
 
+    .dmc-row-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .dmc-row-icon {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .dmc-row-icon.pay {
+        color: var(--pay);
+    }
+
+    .dmc-row-icon.rec {
+        color: var(--receive);
+    }
+
     .dmc-total {
         display: flex;
         justify-content: space-between;
@@ -1008,6 +1031,106 @@
         position: relative;
     }
 
+    /* Pulse Range Bar Component */
+    .pulse-range-bar {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        background-color: var(--surface, #ffffff);
+        border: 1px solid var(--border, #ececec);
+        border-radius: 14px;
+        padding: 5px 6px 5px 8px;
+        box-shadow: var(--shadow-xs, 0 1px 2px rgba(16, 24, 40, 0.04));
+    }
+
+    .pulse-range-trigger {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 10px 5px 6px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        transition: background-color 0.15s ease;
+    }
+
+    .pulse-range-trigger:hover {
+        background-color: var(--surface-2, #f6f4f2);
+    }
+
+    .pulse-range-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        color: var(--pulse-range-active, var(--primary, #0b5d52));
+    }
+
+    .pulse-range-icon svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .pulse-range-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text, #111827);
+        white-space: nowrap;
+        letter-spacing: -0.01em;
+    }
+
+    .pulse-range-presets {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        max-width: 100%;
+        padding: 3px;
+        border-radius: 9999px;
+        background-color: var(--balanced-tint, #f1efee);
+        overflow-x: auto;
+        scrollbar-width: none;
+        position: relative;
+    }
+
+    .pulse-range-presets::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pulse-range-preset {
+        padding: 6px 16px;
+        border: 0;
+        border-radius: 9999px;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--text-2, #6b6663);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        position: relative;
+        z-index: 2;
+    }
+
+    .pulse-range-preset:hover {
+        color: var(--text, #1f2937);
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .pulse-range-preset.is-active,
+    .pulse-range-preset.is-active:hover,
+    .pulse-range-preset.active,
+    .pulse-range-preset.active:hover {
+        background-color: var(--pulse-range-active, var(--primary, #0b5d52));
+        color: #ffffff;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.18);
+    }
+
     .range-bar {
         display: inline-flex;
         align-items: center;
@@ -1025,6 +1148,9 @@
         border-radius: 11px;
         padding: 9px 14px;
         box-shadow: var(--shadow-xs);
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
     }
 
     .date-pill svg {
@@ -1084,10 +1210,41 @@
         bottom: 4px;
         left: 4px;
         width: 0;
-        background: var(--primary);
-        border-radius: 8px;
+        background: var(--pulse-range-active, var(--primary));
+        border-radius: 9999px;
         transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1;
+    }
+
+    /* Third-party bootstrap-daterangepicker styling */
+    .daterangepicker {
+        font-family: var(--font-sans, inherit);
+        border-radius: 14px;
+        border: 1px solid var(--border, #e4e7ec);
+        box-shadow: var(--shadow-lg, 0 16px 40px rgba(9, 30, 26, 0.14));
+        padding: 8px;
+        z-index: 9999;
+    }
+
+    .daterangepicker td.active,
+    .daterangepicker td.active:hover {
+        background-color: var(--pulse-range-active, var(--primary, #0b5d52)) !important;
+        color: #ffffff !important;
+    }
+
+    .daterangepicker td.in-range {
+        background-color: var(--primary-tint, #e6f2ef) !important;
+        color: var(--primary-dark, #08453d) !important;
+    }
+
+    .daterangepicker .ranges li.active {
+        background-color: var(--pulse-range-active, var(--primary, #0b5d52)) !important;
+        color: #ffffff !important;
+    }
+
+    .daterangepicker .applyBtn {
+        background-color: var(--pulse-range-active, var(--primary, #0b5d52)) !important;
+        border-color: var(--pulse-range-active, var(--primary, #0b5d52)) !important;
     }
 
     .range-panel-backdrop {
@@ -1267,6 +1424,16 @@
         color: var(--text-3);
         cursor: default;
         opacity: 0.5;
+    }
+
+    .day.disabled {
+        color: var(--text-3);
+        cursor: not-allowed;
+        opacity: 0.35;
+    }
+
+    .day.disabled:hover {
+        background: transparent;
     }
 
     .day.today {
@@ -1517,6 +1684,21 @@
         display: flex;
         gap: 6px;
         justify-content: flex-end;
+    }
+
+    .link-btn {
+        border: none;
+        background: none;
+        padding: 0;
+        color: var(--brand);
+        cursor: pointer;
+        font: inherit;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .link-btn:hover {
+        color: var(--brand-dark, var(--brand));
     }
 
     .tbl-icon-btn {
@@ -1939,6 +2121,151 @@
         outline: none !important;
     }
 
+    .outstanding-batch-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .outstanding-batch-head h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .batch-date-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-width: 200px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-2);
+    }
+
+    .outstanding-detail-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+    }
+
+    .outstanding-detail-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .outstanding-detail-head h3 {
+        margin: 0 0 4px;
+        font-size: 17px;
+    }
+
+    .outstanding-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+    }
+
+    .outstanding-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+    }
+
+    .outstanding-table thead th {
+        background: var(--surface-2);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .outstanding-table thead th.num,
+    .outstanding-table tbody td.num,
+    .outstanding-table tfoot td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .outstanding-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        background: var(--surface);
+    }
+
+    .outstanding-table tbody td.num {
+        font-weight: 600;
+        font-family: var(--font-mono);
+    }
+
+    .outstanding-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .outstanding-table tbody tr:hover td {
+        background: color-mix(in srgb, var(--primary) 3%, transparent);
+    }
+
+    .outstanding-table tfoot td {
+        background: var(--surface-2);
+        color: var(--text);
+        padding: 12px 14px;
+        font-weight: 600;
+        border-top: 1px solid var(--border);
+    }
+
+    .outstanding-input {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text);
+        background: #ffffff;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .outstanding-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+        outline: none;
+    }
+
+    .outstanding-input.num-input {
+        font-family: var(--font-mono, monospace);
+        text-align: right;
+    }
+
+    .outstanding-input.num-input.neg {
+        color: var(--receive);
+    }
+
+    .batch-form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .batch-form-actions-right {
+        display: flex;
+        gap: 8px;
+    }
+
     .import-stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -2204,6 +2531,12 @@
         margin-bottom: 14px;
     }
 
+    .partner-cards-1 { grid-template-columns: 1fr; }
+    .partner-cards-2 { grid-template-columns: repeat(2, 1fr); }
+    .partner-cards-3 { grid-template-columns: repeat(3, 1fr); }
+    .partner-cards-4 { grid-template-columns: repeat(4, 1fr); }
+    .partner-cards-5 { grid-template-columns: repeat(5, 1fr); }
+
     .partner-card {
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -2385,7 +2718,8 @@
             grid-template-columns: repeat(2, 1fr);
         }
 
-        .partner-cards {
+        .partner-cards,
+        [class*="partner-cards-"] {
             grid-template-columns: 1fr 1fr;
         }
     }
@@ -2443,7 +2777,8 @@
             grid-template-columns: 1fr 1fr;
         }
 
-        .partner-cards {
+        .partner-cards,
+        [class*="partner-cards-"] {
             grid-template-columns: 1fr;
         }
 

@@ -10,8 +10,8 @@ use App\Models\CostCenter;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
 use App\Models\Entity;
-use App\Models\Purchase;
-use App\Models\Sale;
+use App\Models\OutstandingBatch;
+use App\Models\OutstandingLine;
 use App\Models\User;
 use App\Services\DashboardService;
 use App\Services\Dto\DashboardSummary;
@@ -40,12 +40,9 @@ class DashboardDynamicDataTest extends TestCase
         $fibreId = $this->fibreUnitId();
         $entityId = $this->jagadeesanEntityId();
 
-        Sale::factory()->create([
-            'cost_center_id' => $fibreId,
-            'customer_name' => 'Test Customer',
-            'total_invoiced' => '75000.00',
-            'total_received' => '0.00',
-        ]);
+        OutstandingBatch::query()->where('kind', 'receivable')->delete();
+
+        $this->createReceivableLine($fibreId, now()->toDateString(), 'Test Customer', '75000.00');
 
         CreditTransaction::factory()->create([
             'txn_date' => now()->toDateString(),
@@ -61,7 +58,7 @@ class DashboardDynamicDataTest extends TestCase
         $this->assertSame(Money::of('75000'), $summary->receivables);
         $this->assertSame(Money::of('25000'), $summary->creditSales);
 
-        Sale::query()->delete();
+        OutstandingBatch::query()->where('kind', 'receivable')->delete();
 
         $summary = $this->dashboardSummary();
 
@@ -75,12 +72,9 @@ class DashboardDynamicDataTest extends TestCase
         $fibreId = $this->fibreUnitId();
         $entityId = $this->jagadeesanEntityId();
 
-        Sale::factory()->create([
-            'cost_center_id' => $fibreId,
-            'customer_name' => 'Receivable Customer',
-            'total_invoiced' => '40000.00',
-            'total_received' => '10000.00',
-        ]);
+        OutstandingBatch::query()->where('kind', 'receivable')->delete();
+
+        $this->createReceivableLine($fibreId, now()->toDateString(), 'Receivable Customer', '30000.00');
 
         CreditTransaction::factory()->create([
             'txn_date' => now()->toDateString(),
@@ -187,8 +181,8 @@ class DashboardDynamicDataTest extends TestCase
 
         DebitTransaction::query()->delete();
         CreditTransaction::query()->delete();
-        Sale::query()->delete();
-        Purchase::query()->delete();
+        OutstandingBatch::query()->delete();
+        OutstandingBatch::query()->delete();
         BankingSnapshot::query()->delete();
 
         $this->actingAs($admin);
@@ -207,12 +201,9 @@ class DashboardDynamicDataTest extends TestCase
         $this->actingAs($admin);
         app(UnitScope::class)->initializeForUser($admin);
 
-        Sale::factory()->create([
-            'cost_center_id' => $fibreId,
-            'customer_name' => 'Livewire Customer',
-            'total_invoiced' => '12000.00',
-            'total_received' => '0.00',
-        ]);
+        OutstandingBatch::query()->where('kind', 'receivable')->delete();
+
+        $this->createReceivableLine($fibreId, now()->toDateString(), 'Livewire Customer', '12000.00');
 
         Livewire::test(Dashboard::class)
             ->assertSee('12,000');
@@ -274,26 +265,13 @@ class DashboardDynamicDataTest extends TestCase
     {
         $fibreId = $this->fibreUnitId();
 
-        Purchase::query()->delete();
-        Sale::query()->delete();
+        OutstandingBatch::query()->where('kind', 'payable')->delete();
 
-        Purchase::factory()->create([
-            'cost_center_id' => $fibreId,
-            'vendor_name' => 'Old Vendor',
-            'total_billed' => '5000.00',
-            'total_paid' => '0.00',
-            'as_of_date' => now()->subMonths(2)->toDateString(),
-            'txn_date' => now()->subMonths(2)->toDateString(),
-        ]);
+        $oldDate = now()->subMonths(2)->toDateString();
+        $newDate = now()->subMonth()->toDateString();
 
-        Purchase::factory()->create([
-            'cost_center_id' => $fibreId,
-            'vendor_name' => 'New Vendor',
-            'total_billed' => '8000.00',
-            'total_paid' => '0.00',
-            'as_of_date' => now()->subMonth()->toDateString(),
-            'txn_date' => now()->subMonth()->toDateString(),
-        ]);
+        $this->createPayableLine($fibreId, $oldDate, 'Old Vendor', '5000.00');
+        $this->createPayableLine($fibreId, $newDate, 'New Vendor', '8000.00');
 
         $summaryInRange = app(DashboardService::class)->summary(
             DateRange::fromState('custom', now()->subMonths(6)->toDateString(), now()->subMonth()->toDateString()),
@@ -324,6 +302,38 @@ class DashboardDynamicDataTest extends TestCase
         $barsWithFibre = app(DashboardService::class)->shareholderBars([$fibreId], $range);
 
         $this->assertContains('Vikas', collect($barsWithFibre)->pluck('name')->all());
+    }
+
+    private function createReceivableLine(int $costCenterId, string $batchDate, string $party, string $amount): void
+    {
+        $batch = OutstandingBatch::query()->create([
+            'kind' => 'receivable',
+            'batch_date' => $batchDate,
+            'created_by' => null,
+        ]);
+
+        OutstandingLine::query()->create([
+            'batch_id' => $batch->id,
+            'cost_center_id' => $costCenterId,
+            'party_name' => $party,
+            'amount' => $amount,
+        ]);
+    }
+
+    private function createPayableLine(int $costCenterId, string $batchDate, string $party, string $amount): void
+    {
+        $batch = OutstandingBatch::query()->create([
+            'kind' => 'payable',
+            'batch_date' => $batchDate,
+            'created_by' => null,
+        ]);
+
+        OutstandingLine::query()->create([
+            'batch_id' => $batch->id,
+            'cost_center_id' => $costCenterId,
+            'party_name' => $party,
+            'amount' => $amount,
+        ]);
     }
 
     private function dashboardSummary(): DashboardSummary

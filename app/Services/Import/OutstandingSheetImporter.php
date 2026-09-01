@@ -2,11 +2,14 @@
 
 namespace App\Services\Import;
 
-use App\Models\Purchase;
-use App\Models\Sale;
+use App\Models\OutstandingBatch;
+use App\Models\OutstandingLine;
 
 class OutstandingSheetImporter
 {
+    /** @var array<string, int> */
+    private array $batchCache = [];
+
     public function __construct(private ExcelLookup $lookup) {}
 
     /**
@@ -51,6 +54,7 @@ class OutstandingSheetImporter
      */
     public function import(array $rows, bool $dryRun = false): ImportSheetResult
     {
+        $this->batchCache = [];
         $result = new ImportSheetResult(sheet: 'Outstanding');
 
         foreach ($rows as $index => $row) {
@@ -72,41 +76,23 @@ class OutstandingSheetImporter
                 }
 
                 $validated = $this->validateRow($row);
-                $asOfDate = now()->toDateString();
                 $txnDate = $validated['txn_date'];
+                $kind = $validated['kind'] === 'payable' ? 'payable' : 'receivable';
 
-                if ($validated['kind'] === 'payable') {
-                    if (! $dryRun) {
-                        Purchase::query()->updateOrCreate(
-                            [
-                                'cost_center_id' => $validated['cost_center_id'],
-                                'vendor_name' => $validated['party'],
-                            ],
-                            [
-                                'total_billed' => $validated['amount'],
-                                'total_paid' => '0.00',
-                                'notes' => $validated['notes'],
-                                'as_of_date' => $asOfDate,
-                                'txn_date' => $txnDate,
-                            ],
-                        );
-                    }
-                } else {
-                    if (! $dryRun) {
-                        Sale::query()->updateOrCreate(
-                            [
-                                'cost_center_id' => $validated['cost_center_id'],
-                                'customer_name' => $validated['party'],
-                            ],
-                            [
-                                'total_invoiced' => $validated['amount'],
-                                'total_received' => '0.00',
-                                'notes' => $validated['notes'],
-                                'as_of_date' => $asOfDate,
-                                'txn_date' => $txnDate,
-                            ],
-                        );
-                    }
+                if (! $dryRun) {
+                    $batchId = $this->resolveBatchId($kind, $txnDate);
+
+                    OutstandingLine::query()->updateOrCreate(
+                        [
+                            'batch_id' => $batchId,
+                            'cost_center_id' => $validated['cost_center_id'],
+                            'party_name' => $validated['party'],
+                        ],
+                        [
+                            'amount' => $validated['amount'],
+                            'notes' => $validated['notes'],
+                        ],
+                    );
                 }
 
                 $result = new ImportSheetResult(
@@ -129,6 +115,29 @@ class OutstandingSheetImporter
         }
 
         return $result;
+    }
+
+    private function resolveBatchId(string $kind, string $batchDate): int
+    {
+        $key = $kind.'|'.$batchDate;
+
+        if (isset($this->batchCache[$key])) {
+            return $this->batchCache[$key];
+        }
+
+        $batch = OutstandingBatch::query()->firstOrCreate(
+            [
+                'kind' => $kind,
+                'batch_date' => $batchDate,
+            ],
+            [
+                'created_by' => auth()->id(),
+            ],
+        );
+
+        $this->batchCache[$key] = $batch->id;
+
+        return $batch->id;
     }
 
     /**

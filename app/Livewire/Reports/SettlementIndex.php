@@ -20,8 +20,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Layout('components.layouts.shell', ['currentPage' => 'settlement', 'pageTitle' => 'Summary & Settlement'])]
-#[Title('Summary & Settlement')]
+#[Layout('components.layouts.shell', ['currentPage' => 'settlement', 'pageTitle' => 'Settlements'])]
+#[Title('Settlements')]
 class SettlementIndex extends Component
 {
     use AuthorizesRequests;

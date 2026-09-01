@@ -89,6 +89,7 @@ class DateRangePickerTest extends TestCase
 
         Livewire::test(DebitIndex::class)
             ->call('setRangePreset', '7d')
+            ->call('applyRangePicker')
             ->assertSet('rangePreset', '7d')
             ->assertSee('₹200')
             ->assertDontSee('₹100');
@@ -133,5 +134,33 @@ class DateRangePickerTest extends TestCase
             ->assertSet('rangeTo', '2026-08-31')
             ->assertSee('₹200')
             ->assertDontSee('₹100');
+    }
+
+    public function test_detect_preset_identifies_matching_ranges(): void
+    {
+        Carbon::setTestNow('2026-08-31');
+
+        $this->assertSame('today', DateRange::detectPreset('2026-08-31', '2026-08-31'));
+        $this->assertSame('7d', DateRange::detectPreset('2026-08-25', '2026-08-31'));
+        $this->assertSame('ytd', DateRange::detectPreset('2026-04-01', '2026-08-31'));
+        $this->assertSame('custom', DateRange::detectPreset('2026-01-10', '2026-02-15'));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_update_picker_dates_auto_detects_preset(): void
+    {
+        Carbon::setTestNow('2026-08-31');
+
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+        $this->actingAs($admin);
+        app(UnitScope::class)->initializeForUser($admin);
+
+        Livewire::test(DebitIndex::class)
+            ->call('updatePickerDates', '2026-08-25', '2026-08-31')
+            ->assertSet('pickerPreset', '7d');
+
+        Carbon::setTestNow();
     }
 }

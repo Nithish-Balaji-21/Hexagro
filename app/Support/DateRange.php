@@ -52,18 +52,39 @@ final class DateRange
                 $asOf->copy()->subMonth()->startOfMonth()->toDateString(),
                 $asOf->copy()->subMonth()->endOfMonth()->toDateString(),
             ),
-            'this_year' => new self('this_year', $asOf->copy()->startOfYear()->toDateString(), $latest),
+            'this_year' => new self('this_year', $fyStart, $latest),
             'last_year' => new self(
                 'last_year',
-                $asOf->copy()->subYear()->startOfYear()->toDateString(),
-                $asOf->copy()->subYear()->endOfYear()->toDateString(),
+                FiscalYear::months(FiscalYear::startYear($asOf) - 1)[0]['start']->toDateString(),
+                FiscalYear::months(FiscalYear::startYear($asOf) - 1)[11]['end']->toDateString(),
             ),
             '7d' => new self('7d', $asOf->copy()->subDays(6)->toDateString(), $latest),
             '1m' => new self('1m', $asOf->copy()->subMonth()->addDay()->toDateString(), $latest),
             'ytd' => new self('ytd', $fyStart, $latest),
-            'custom' => new self('custom', $from ?: $fyStart, $to ?: $latest),
+            'custom' => new self('custom', $from ?: null, $to ?: null),
             default => new self('ytd', $fyStart, $latest),
         };
+    }
+
+    public static function detectPreset(?string $from, ?string $to, ?Carbon $asOf = null): string
+    {
+        if (! $from || ! $to) {
+            return 'custom';
+        }
+
+        $presetsToTest = array_unique(array_merge(
+            array_filter(self::QUICK_PRESETS, fn (string $p): bool => $p !== 'custom'),
+            self::SIDEBAR_PRESETS
+        ));
+
+        foreach ($presetsToTest as $presetKey) {
+            $computed = self::fromState($presetKey, null, null, $asOf);
+            if ($computed->from === $from && $computed->to === $to) {
+                return $presetKey;
+            }
+        }
+
+        return 'custom';
     }
 
     public function label(): string

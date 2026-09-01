@@ -21,6 +21,10 @@ class ImportIndex extends Component
     #[Url]
     public ?string $kind = null;
 
+    public bool $showDetail = false;
+
+    public ?ImportRun $selectedRun = null;
+
     public function mount(): void
     {
         $this->authorize('create', DebitTransaction::class);
@@ -34,6 +38,21 @@ class ImportIndex extends Component
         $deleted = $importRunService->revert($run);
         
         $this->dispatch('toast', message: "Reverted import of {$run->filename} — {$deleted} row(s) removed.");
+    }
+
+    public function showRunDetails(int $runId): void
+    {
+        $this->authorize('create', DebitTransaction::class);
+
+        $run = ImportRun::query()->findOrFail($runId);
+        $this->selectedRun = $run->importedRecordsWithRelations();
+        $this->showDetail = true;
+    }
+
+    public function closeDetail(): void
+    {
+        $this->showDetail = false;
+        $this->selectedRun = null;
     }
 
     public function render()

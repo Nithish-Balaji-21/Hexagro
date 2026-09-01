@@ -18,24 +18,29 @@
 @endphp
 
 <div
-    {{ $attributes->merge(['class' => 'range-picker']) }}
+    {{ $attributes->merge(['class' => 'range-picker pulse-range-bar']) }}
+    style="--pulse-range-active: var(--primary);"
     x-data="hexRangePicker"
 >
     <div class="range-bar">
-        <div class="date-pill">
-            <x-hex.icon name="calendar" />
-            <span class="date-pill-text">{{ $range->displayLabel() }}</span>
-        </div>
+        <button type="button" x-ref="trigger" class="pulse-range-trigger date-pill" wire:click="openRangePicker" aria-label="Change date range">
+            <span class="pulse-range-icon" aria-hidden="true">
+                <x-hex.icon name="calendar" />
+            </span>
+            <span class="pulse-range-label date-pill-text" id="selected-range">{{ $range->displayLabel() }}</span>
+        </button>
 
-        <div class="picker" x-ref="picker">
+        <div class="picker pulse-range-presets" x-ref="picker" role="group" aria-label="Quick date ranges">
             <div class="indicator" x-ref="indicator"></div>
             @foreach (\App\Support\DateRange::QUICK_PRESETS as $key)
                 <button
                     type="button"
                     data-range="{{ $key }}"
+                    data-range-preset="{{ $key }}"
                     wire:click="setRangePreset('{{ $key }}')"
-                    :class="{ 'active': activeQuickPreset === '{{ $key }}' }"
-                    class="{{ $quickActive === $key ? 'active' : '' }}"
+                    :class="{ 'active is-active': activeQuickPreset === '{{ $key }}' }"
+                    class="pulse-range-preset {{ $quickActive === $key ? 'active is-active' : '' }}"
+                    aria-pressed="{{ $quickActive === $key ? 'true' : 'false' }}"
                 >
                     {{ \App\Support\DateRange::quickPresetLabel($key) }}
                 </button>
@@ -52,6 +57,7 @@
                         <button
                             type="button"
                             wire:click="setPickerPreset('{{ $key }}')"
+                            :class="{ 'is-selected': activeSidebarPreset === '{{ $key }}' }"
                             class="{{ $pPreset === $key ? 'is-selected' : '' }}"
                         >
                             {{ \App\Support\DateRange::sidebarLabel($key) }}
@@ -59,23 +65,29 @@
                     @endforeach
                 </div>
 
+@php
+    $monthsList = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    $currentYearVal = (int) date('Y');
+    $yearsList = range($currentYearVal - 6, $currentYearVal);
+@endphp
+
                 <div class="months">
                     <div class="month">
                         <div class="month-nav">
                             <button type="button" class="navbtn" @click="prevLeftMonth">&lsaquo;</button>
                             <div class="month-year-selects">
-                                <select x-model.number="leftMonth" @change="updateRightFromLeft()" class="mselect">
-                                    <template x-for="(mName, idx) in monthNames" :key="'lm-' + idx">
-                                        <option :value="idx" x-text="mName" :selected="leftMonth === idx"></option>
-                                    </template>
+                                <select x-model.number="leftMonth" @change="onLeftMonthChange" class="mselect">
+                                    @foreach ($monthsList as $idx => $mName)
+                                        <option value="{{ $idx }}">{{ $mName }}</option>
+                                    @endforeach
                                 </select>
-                                <select x-model.number="leftYear" @change="updateRightFromLeft()" class="yselect">
-                                    <template x-for="y in yearOptions" :key="'ly-' + y">
-                                        <option :value="y" x-text="y" :selected="leftYear === y"></option>
-                                    </template>
+                                <select x-model.number="leftYear" @change="onLeftYearChange" class="yselect">
+                                    @foreach ($yearsList as $y)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endforeach
                                 </select>
                             </div>
-                            <span class="navbtn hidden">&rsaquo;</span>
+                            <button type="button" class="navbtn" @click="nextLeftMonth">&rsaquo;</button>
                         </div>
                         <table>
                             <thead>
@@ -92,11 +104,11 @@
                                             <td>
                                                 <button
                                                     type="button"
-                                                    @click="! cell.muted && selectDate(cell.dateStr)"
-                                                    @mouseenter="! cell.muted && previewDate(cell.dateStr)"
+                                                    @click="! isDisabled(cell.dateStr, cell.muted) && selectDate(cell.dateStr)"
+                                                    @mouseenter="! isDisabled(cell.dateStr, cell.muted) && previewDate(cell.dateStr)"
                                                     @mouseleave="clearPreview()"
-                                                    :class="cell.muted ? 'day muted' : dayClasses(cell.dateStr)"
-                                                    :disabled="cell.muted"
+                                                    :class="dayClasses(cell)"
+                                                    :disabled="isDisabled(cell.dateStr, cell.muted)"
                                                     x-text="cell.day"
                                                 ></button>
                                             </td>
@@ -109,17 +121,17 @@
 
                     <div class="month">
                         <div class="month-nav">
-                            <span class="navbtn hidden">&lsaquo;</span>
+                            <button type="button" class="navbtn" @click="prevRightMonth">&lsaquo;</button>
                             <div class="month-year-selects">
-                                <select x-model.number="rightMonth" @change="updateLeftFromRight()" class="mselect">
-                                    <template x-for="(mName, idx) in monthNames" :key="'rm-' + idx">
-                                        <option :value="idx" x-text="mName" :selected="rightMonth === idx"></option>
-                                    </template>
+                                <select x-model.number="rightMonth" @change="onRightMonthChange" class="mselect">
+                                    @foreach ($monthsList as $idx => $mName)
+                                        <option value="{{ $idx }}">{{ $mName }}</option>
+                                    @endforeach
                                 </select>
-                                <select x-model.number="rightYear" @change="updateLeftFromRight()" class="yselect">
-                                    <template x-for="y in yearOptions" :key="'ry-' + y">
-                                        <option :value="y" x-text="y" :selected="rightYear === y"></option>
-                                    </template>
+                                <select x-model.number="rightYear" @change="onRightYearChange" class="yselect">
+                                    @foreach ($yearsList as $y)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <button type="button" class="navbtn" @click="nextRightMonth">&rsaquo;</button>
@@ -139,11 +151,11 @@
                                             <td>
                                                 <button
                                                     type="button"
-                                                    @click="! cell.muted && selectDate(cell.dateStr)"
-                                                    @mouseenter="! cell.muted && previewDate(cell.dateStr)"
+                                                    @click="! isDisabled(cell.dateStr, cell.muted) && selectDate(cell.dateStr)"
+                                                    @mouseenter="! isDisabled(cell.dateStr, cell.muted) && previewDate(cell.dateStr)"
                                                     @mouseleave="clearPreview()"
-                                                    :class="cell.muted ? 'day muted' : dayClasses(cell.dateStr)"
-                                                    :disabled="cell.muted"
+                                                    :class="dayClasses(cell)"
+                                                    :disabled="isDisabled(cell.dateStr, cell.muted)"
                                                     x-text="cell.day"
                                                 ></button>
                                             </td>

@@ -166,7 +166,7 @@ class ImportTemplateService
         $instructions = $spreadsheet->getActiveSheet();
         $instructions->setTitle('Instructions');
         $this->writeInstructions($instructions, [
-            'Outstanding rows update customer receivables (Sales page) or vendor payables (Purchases page).',
+            'Outstanding rows update receivables (Receivables page) or payables (Payables page).',
             'Headers must start on row 3. Rows 1–2 are reserved for title/notes.',
             'Optional Date column specifies invoice/bill date (defaults to today).',
             'Type is required when the party is not already known to the system.',

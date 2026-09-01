@@ -47,20 +47,4 @@ class CostCenter extends Model
     {
         return $this->hasMany(Transfer::class);
     }
-
-    /**
-     * @return HasMany<Purchase, $this>
-     */
-    public function purchases(): HasMany
-    {
-        return $this->hasMany(Purchase::class);
-    }
-
-    /**
-     * @return HasMany<Sale, $this>
-     */
-    public function sales(): HasMany
-    {
-        return $this->hasMany(Sale::class);
-    }
 }

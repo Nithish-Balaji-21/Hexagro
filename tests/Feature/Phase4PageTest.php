@@ -26,9 +26,10 @@ class Phase4PageTest extends TestCase
         return [
             'transfers' => ['/transfers', 'Transfers'],
             'monthly spend' => ['/monthly-spend', 'Monthly Spend'],
-            'settlement' => ['/settlement', 'Summary & Settlement'],
-            'purchases' => ['/purchases', 'Purchases'],
-            'sales' => ['/sales', 'Sales'],
+            'summary' => ['/summary', 'Summary'],
+            'settlement' => ['/settlement', 'Settlements'],
+            'payables' => ['/payables', 'Payables'],
+            'receivables' => ['/receivables', 'Receivables'],
             'banking' => ['/banking', 'Banking'],
             'ledger book' => ['/ledger-book', 'Ledger Book'],
         ];

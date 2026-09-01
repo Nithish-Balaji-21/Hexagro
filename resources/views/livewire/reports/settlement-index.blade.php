@@ -1,5 +1,5 @@
 <div>
-    <x-hex.page-head title="Summary & Settlement" subtitle="Funding breakdown and shareholder reconciliation" />
+    <x-hex.page-head title="Settlements" subtitle="Shareholder net position and reconciliation" />
 
     <x-hex.unit-scope-note :all-selected="$allSelected" :label="$scopeLabel" action="see another unit or overall position" />
 
@@ -10,35 +10,6 @@
         @if ($allSelected)
             <button type="button" wire:click="setTab('overall')" class="tab-btn {{ $selectedTab === 'overall' ? 'active' : '' }}">Overall Position</button>
         @endif
-    </div>
-
-    <div class="chart-grid mb-4">
-        <div class="card">
-            <div class="card-head"><h3>Paid Through Breakdown</h3><span class="hint">FY-to-date</span></div>
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead><tr><th>Paid Through</th><th class="num">Expenses</th><th class="num">Raw Materials</th><th class="num">Other Debits</th><th class="num">Credits</th><th class="num">Total</th></tr></thead>
-                    <tbody>
-                        @foreach ($fundingRows as $row)
-                            <tr wire:key="fb-{{ $row->entity->id }}">
-                                <td>{{ $row->entity->name }}</td>
-                                <td class="num amt"><x-hex.money :amount="$row->expenses" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->rawMaterials" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->otherDebits" /></td>
-                                <td class="num amt rec"><x-hex.money :amount="$row->credits" /></td>
-                                <td class="num amt"><x-hex.money :amount="$row->entityTotal" /></td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card card-pad" wire:key="settlement-chart-{{ $chartRefreshKey }}" id="chartSummaryContainer" data-chart='@json($chartData)'>
-            <div class="card-head" style="border:none;padding:0 0 12px"><h3>Funding Mix</h3></div>
-            <div class="chart-canvas-box" wire:ignore>
-                <canvas id="chartSummary"></canvas>
-            </div>
-        </div>
     </div>
 
     @if ($isOverall && $overall)
@@ -63,7 +34,7 @@
             </div>
         </div>
     @elseif ($unitSettlement)
-        <div class="partner-cards mb-4">
+        <div class="partner-cards partner-cards-{{ count($unitSettlement->partners) }} mb-4">
             @foreach ($unitSettlement->partners as $partner)
                 <div class="partner-card" wire:key="p-{{ $partner->entity->id }}">
                     <div class="pname">{{ $partner->entity->short_name }} <span>{{ number_format((float) $partner->sharePct * 100, 1) }}% share</span></div>

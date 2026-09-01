@@ -39,7 +39,7 @@ class BankingIndexTest extends TestCase
         $this->actingAs($admin);
 
         Livewire::test(BankingIndex::class)
-            ->set('formAsOf', '2026-09-01')
+            ->set('formAsOf', '01/09/2026')
             ->set('formCurrent', '300000.00')
             ->set('formCcLimit', '5000000.00')
             ->set('formCcUtilised', '3500000.00')
@@ -53,6 +53,67 @@ class BankingIndexTest extends TestCase
             'as_of_date' => '2026-09-01',
             'current_balance' => '300000.00',
             'alam_utilised' => '0.00',
+        ]);
+    }
+
+    public function test_admin_cannot_create_duplicate_snapshot_for_same_date(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $this->actingAs($admin);
+
+        Livewire::test(BankingIndex::class)
+            ->set('formAsOf', '15/08/2026')
+            ->set('formCurrent', '300000.00')
+            ->set('formCcLimit', '5000000.00')
+            ->set('formCcUtilised', '3500000.00')
+            ->set('formTermLoan', '13000000.00')
+            ->set('formTlLimit', '13500000.00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        Livewire::test(BankingIndex::class)
+            ->set('formAsOf', '15/08/2026')
+            ->set('formCurrent', '400000.00')
+            ->set('formCcLimit', '5000000.00')
+            ->set('formCcUtilised', '3500000.00')
+            ->set('formTermLoan', '13000000.00')
+            ->set('formTlLimit', '13500000.00')
+            ->call('save')
+            ->assertHasErrors(['formAsOf' => 'unique']);
+
+        $this->assertSame(1, BankingSnapshot::query()->where('as_of_date', '2026-08-15')->count());
+    }
+
+    public function test_admin_can_edit_existing_snapshot_for_same_date(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $this->actingAs($admin);
+
+        Livewire::test(BankingIndex::class)
+            ->set('formAsOf', '20/08/2026')
+            ->set('formCurrent', '300000.00')
+            ->set('formCcLimit', '5000000.00')
+            ->set('formCcUtilised', '3500000.00')
+            ->set('formTermLoan', '13000000.00')
+            ->set('formTlLimit', '13500000.00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $snapshot = BankingSnapshot::query()->where('as_of_date', '2026-08-20')->firstOrFail();
+
+        Livewire::test(BankingIndex::class)
+            ->call('openEditForm', $snapshot->id)
+            ->set('formCurrent', '450000.00')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSet('showForm', false);
+
+        $this->assertDatabaseHas('banking_snapshots', [
+            'id' => $snapshot->id,
+            'as_of_date' => '2026-08-20',
+            'current_balance' => '450000.00',
         ]);
     }
 

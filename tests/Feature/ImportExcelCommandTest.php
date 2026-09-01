@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
-use App\Models\Purchase;
-use App\Models\Sale;
+use App\Models\OutstandingBatch;
+use App\Models\OutstandingLine;
 use App\Models\Transfer;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -38,8 +38,8 @@ class ImportExcelCommandTest extends TestCase
         $this->assertSame(0, DebitTransaction::query()->count());
         $this->assertSame(0, CreditTransaction::query()->count());
         $this->assertSame(0, Transfer::query()->count());
-        $this->assertSame(0, Purchase::query()->count());
-        $this->assertSame(0, Sale::query()->count());
+        $this->assertSame(0, OutstandingBatch::query()->count());
+        $this->assertSame(0, OutstandingLine::query()->count());
     }
 
     public function test_imports_debit_credit_transfer_and_outstanding_rows(): void
@@ -51,8 +51,8 @@ class ImportExcelCommandTest extends TestCase
         $this->assertSame(2, DebitTransaction::query()->count());
         $this->assertSame(1, CreditTransaction::query()->count());
         $this->assertSame(1, Transfer::query()->count());
-        $this->assertSame(1, Purchase::query()->count());
-        $this->assertSame(1, Sale::query()->count());
+        $this->assertSame(2, OutstandingBatch::query()->count());
+        $this->assertSame(2, OutstandingLine::query()->count());
 
         $this->assertDatabaseHas('debit_transactions', [
             'account' => 'Fuel Expense',
@@ -68,14 +68,14 @@ class ImportExcelCommandTest extends TestCase
             'amount' => '87671.00',
         ]);
 
-        $this->assertDatabaseHas('purchases', [
-            'vendor_name' => 'HP Cocos',
-            'total_billed' => '346000.00',
+        $this->assertDatabaseHas('outstanding_lines', [
+            'party_name' => 'HP Cocos',
+            'amount' => '346000.00',
         ]);
 
-        $this->assertDatabaseHas('sales', [
-            'customer_name' => 'Sakthi Mariamman',
-            'total_invoiced' => '484690.00',
+        $this->assertDatabaseHas('outstanding_lines', [
+            'party_name' => 'Sakthi Mariamman',
+            'amount' => '484690.00',
         ]);
     }
 

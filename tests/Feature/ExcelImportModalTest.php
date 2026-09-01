@@ -6,7 +6,8 @@ use App\Livewire\Import\ExcelImportModal;
 use App\Livewire\Import\ImportIndex;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
-use App\Models\Sale;
+use App\Models\ImportRun;
+use App\Models\OutstandingLine;
 use App\Models\User;
 use App\Services\Import\ExcelImportService;
 use Database\Seeders\DatabaseSeeder;
@@ -98,6 +99,35 @@ class ExcelImportModalTest extends TestCase
             ->assertSee('Import Data');
     }
 
+    public function test_admin_can_view_import_run_details(): void
+    {
+        $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
+
+        $debit = DebitTransaction::factory()->create([
+            'created_by' => $admin->id,
+        ]);
+
+        $run = ImportRun::query()->create([
+            'kind' => 'debit',
+            'filename' => 'test-import.xlsx',
+            'user_id' => $admin->id,
+            'row_count' => 1,
+        ]);
+
+        $debit->update(['import_run_id' => $run->id]);
+        $debit->load(['costCenter', 'paidThrough']);
+
+        Livewire::actingAs($admin)
+            ->test(ImportIndex::class)
+            ->call('showRunDetails', $run->id)
+            ->assertSet('showDetail', true)
+            ->assertSee('Import #'.$run->id)
+            ->assertSee('test-import.xlsx')
+            ->assertSee($debit->costCenter->name)
+            ->assertSee($debit->paidThrough->name)
+            ->assertSee($debit->description);
+    }
+
     public function test_admin_can_download_debit_template(): void
     {
         $admin = User::query()->where('name', 'Jagadeesan')->firstOrFail();
@@ -136,13 +166,13 @@ class ExcelImportModalTest extends TestCase
 
         app(ExcelImportService::class)->import($path, dryRun: false, only: ['outstanding']);
 
-        $this->assertSame('10000.00', Sale::query()->where('customer_name', 'New Customer Ltd')->value('total_invoiced'));
+        $this->assertSame('10000.00', OutstandingLine::query()->where('party_name', 'New Customer Ltd')->value('amount'));
 
         $this->createOutstandingWorkbook($path, 25000);
 
         app(ExcelImportService::class)->import($path, dryRun: false, only: ['outstanding']);
 
-        $this->assertSame('25000.00', Sale::query()->where('customer_name', 'New Customer Ltd')->value('total_invoiced'));
+        $this->assertSame('25000.00', OutstandingLine::query()->where('party_name', 'New Customer Ltd')->value('amount'));
     }
 
     private function uploadedFixture(): UploadedFile

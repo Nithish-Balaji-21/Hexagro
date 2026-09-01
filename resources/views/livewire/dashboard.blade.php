@@ -22,7 +22,6 @@
                 <div class="kpi-icon"><x-hex.icon name="down" /></div>
                 <h3>Debit</h3>
             </div>
-            <p class="hint mb-2">From debit transactions in range</p>
             <div class="dmc-row"><span>Raw Material</span><b><x-hex.money :amount="$summary->debitRaw" /></b></div>
             <div class="dmc-row"><span>Expense</span><b><x-hex.money :amount="$summary->debitExpense" /></b></div>
             <div class="dmc-total">Total<b><x-hex.money :amount="$summary->debitTotal()" /></b></div>
@@ -33,7 +32,6 @@
                 <div class="kpi-icon"><x-hex.icon name="up" /></div>
                 <h3>Credit</h3>
             </div>
-            <p class="hint mb-2">From credit transactions in range</p>
             <div class="dmc-row"><span>Sales</span><b class="rec"><x-hex.money :amount="$summary->creditSales" /></b></div>
             <div class="dmc-row"><span>Others</span><b class="rec"><x-hex.money :amount="$summary->creditOthers" /></b></div>
             <div class="dmc-total">Total<b class="rec"><x-hex.money :amount="$summary->creditTotal()" /></b></div>
@@ -45,7 +43,7 @@
                 <div class="kpi-icon"><x-hex.icon name="bank" /></div>
                 <h3>Banking</h3>
             </div>
-            <p class="hint mb-2">Latest banking snapshot</p>
+            <p class="hint mb-2">{{ $summary->bankAsOfDate ? 'As of '.$summary->bankAsOfDate : 'Latest banking snapshot' }}</p>
             <div class="dmc-row"><span>CA</span><b><x-hex.money :amount="$summary->bankCurrent" /></b></div>
             <div class="dmc-row"><span>CC limit</span><b><x-hex.money :amount="$summary->bankCcLimit" /></b></div>
             <div class="dmc-row"><span>CC utilised</span><b><x-hex.money :amount="$summary->bankCcUtilised" /></b></div>
@@ -62,9 +60,14 @@
                 <div class="kpi-icon"><x-hex.icon name="clock" /></div>
                 <h3>Outstandings</h3>
             </div>
-            <p class="hint mb-2">Payables from purchases · Receivables from sales balances</p>
-            <div class="dmc-row"><span>Payables</span><b class="pay"><x-hex.money :amount="$summary->payables" /></b></div>
-            <div class="dmc-row"><span>Receivables</span><b class="rec"><x-hex.money :amount="$summary->receivables" /></b></div>
+            <div class="dmc-row">
+                <span class="dmc-row-label">Payables <x-hex.icon name="outward" class="dmc-row-icon pay" /></span>
+                <b class="pay"><x-hex.money :amount="$summary->payables" /></b>
+            </div>
+            <div class="dmc-row">
+                <span class="dmc-row-label">Receivables <x-hex.icon name="inward" class="dmc-row-icon rec" /></span>
+                <b class="rec"><x-hex.money :amount="$summary->receivables" /></b>
+            </div>
         </div>
 
         <div class="card card-pad dash-mini-card dash-chart-card" wire:key="share-fair-chart-{{ $chartRefreshKey }}">

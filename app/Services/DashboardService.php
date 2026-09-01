@@ -8,11 +8,12 @@ use App\Models\CostCenter;
 use App\Models\CreditTransaction;
 use App\Models\DebitTransaction;
 use App\Models\Entity;
-use App\Models\Purchase;
-use App\Models\Sale;
+use App\Models\OutstandingBatch;
+use App\Models\OutstandingLine;
 use App\Services\Dto\DashboardSummary;
 use App\Services\Dto\ShareholderBar;
 use App\Support\DateRange;
+use App\Support\Inr;
 use App\Support\Money;
 
 class DashboardService
@@ -56,6 +57,9 @@ class DashboardService
             bankCcUtilised: $banking?->snapshot->cc_utilised,
             bankTlLimit: $banking?->snapshot->tl_limit,
             bankTermLoan: $banking?->snapshot->term_loan,
+            bankAsOfDate: $banking !== null
+                ? Inr::formatDatePicker($banking->snapshot->as_of_date->toDateString())
+                : null,
             payables: Money::of($payables),
             receivables: Money::of($receivables),
         );
@@ -120,30 +124,28 @@ class DashboardService
      */
     private function outstandingPayables(array $costCenterIds, string $asOfDate): string
     {
-        $total = Money::zero();
+        $latestBatchDate = OutstandingBatch::query()
+            ->where('kind', 'payable')
+            ->where('batch_date', '<=', $asOfDate)
+            ->max('batch_date');
 
-        foreach ($costCenterIds as $costCenterId) {
-            $latestTxnDate = Purchase::query()
-                ->where('cost_center_id', $costCenterId)
-                ->whereNotNull('txn_date')
-                ->where('txn_date', '<=', $asOfDate)
-                ->max('txn_date');
-
-            if ($latestTxnDate === null) {
-                continue;
-            }
-
-            $total = Money::add(
-                $total,
-                Purchase::query()
-                    ->where('cost_center_id', $costCenterId)
-                    ->where('txn_date', $latestTxnDate)
-                    ->whereNotNull('total_billed')
-                    ->sum('balance'),
-            );
+        if ($latestBatchDate === null) {
+            return Money::zero();
         }
 
-        return $total;
+        $batchId = OutstandingBatch::query()
+            ->where('kind', 'payable')
+            ->where('batch_date', $latestBatchDate)
+            ->value('id');
+
+        if ($batchId === null) {
+            return Money::zero();
+        }
+
+        return (string) OutstandingLine::query()
+            ->where('batch_id', $batchId)
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->sum('amount');
     }
 
     /**
@@ -151,28 +153,27 @@ class DashboardService
      */
     private function outstandingReceivables(array $costCenterIds, string $asOfDate): string
     {
-        $total = Money::zero();
+        $latestBatchDate = OutstandingBatch::query()
+            ->where('kind', 'receivable')
+            ->where('batch_date', '<=', $asOfDate)
+            ->max('batch_date');
 
-        foreach ($costCenterIds as $costCenterId) {
-            $latestTxnDate = Sale::query()
-                ->where('cost_center_id', $costCenterId)
-                ->whereNotNull('txn_date')
-                ->where('txn_date', '<=', $asOfDate)
-                ->max('txn_date');
-
-            if ($latestTxnDate === null) {
-                continue;
-            }
-
-            $total = Money::add(
-                $total,
-                Sale::query()
-                    ->where('cost_center_id', $costCenterId)
-                    ->where('txn_date', $latestTxnDate)
-                    ->sum('balance'),
-            );
+        if ($latestBatchDate === null) {
+            return Money::zero();
         }
 
-        return $total;
+        $batchId = OutstandingBatch::query()
+            ->where('kind', 'receivable')
+            ->where('batch_date', $latestBatchDate)
+            ->value('id');
+
+        if ($batchId === null) {
+            return Money::zero();
+        }
+
+        return (string) OutstandingLine::query()
+            ->where('batch_id', $batchId)
+            ->whereIn('cost_center_id', $costCenterIds)
+            ->sum('amount');
     }
 }

@@ -16,6 +16,7 @@ class DashboardSummary
         public ?string $bankCcUtilised,
         public ?string $bankTlLimit,
         public ?string $bankTermLoan,
+        public ?string $bankAsOfDate,
         public string $payables,
         public string $receivables,
     ) {}

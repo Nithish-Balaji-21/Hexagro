@@ -7,8 +7,7 @@ use App\Enums\DebitCategory;
 use App\Enums\UserRole;
 use App\Models\CostCenter;
 use App\Models\Entity;
-use App\Models\Purchase;
-use App\Models\Sale;
+use App\Models\OutstandingLine;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -167,12 +166,13 @@ class ExcelLookup
             return $kinds[$trimmed];
         }
 
-        if (Sale::query()->where('customer_name', $trimmed)->exists()) {
-            return 'receivable';
-        }
+        $existingKind = OutstandingLine::query()
+            ->where('party_name', $trimmed)
+            ->join('outstanding_batches', 'outstanding_batches.id', '=', 'outstanding_lines.batch_id')
+            ->value('outstanding_batches.kind');
 
-        if (Purchase::query()->where('vendor_name', $trimmed)->exists()) {
-            return 'payable';
+        if (is_string($existingKind) && in_array($existingKind, ['payable', 'receivable'], true)) {
+            return $existingKind;
         }
 
         return null;

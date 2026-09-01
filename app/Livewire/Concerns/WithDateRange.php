@@ -28,8 +28,22 @@ trait WithDateRange
             return;
         }
 
+        $range = DateRange::fromState($preset);
         $this->rangePreset = $preset;
+        $this->rangeFrom = $range->from ?? '';
+        $this->rangeTo = $range->to ?? '';
+        $this->pickerFrom = $this->rangeFrom;
+        $this->pickerTo = $this->rangeTo;
+        $this->pickerPreset = $preset;
         $this->rangePickerOpen = false;
+
+        $this->dispatch('pulse:range-changed', [
+            'from' => $this->rangeFrom,
+            'to' => $this->rangeTo,
+            'preset' => $this->rangePreset,
+            'label' => $range->displayLabel(),
+        ]);
+
         $this->resetDateRangePage();
     }
 
@@ -50,6 +64,15 @@ trait WithDateRange
 
     public function setPickerPreset(string $preset): void
     {
+        if ($preset === 'custom') {
+            $this->pickerPreset = 'custom';
+            $this->pickerFrom = '';
+            $this->pickerTo = '';
+            $this->dispatch('range-picker-dates', from: '', to: '');
+
+            return;
+        }
+
         $range = DateRange::fromState($preset);
         $this->pickerPreset = $preset;
         $this->pickerFrom = $range->from ?? '';
@@ -61,7 +84,7 @@ trait WithDateRange
     {
         $this->pickerFrom = $from;
         $this->pickerTo = $to;
-        $this->pickerPreset = 'custom';
+        $this->pickerPreset = DateRange::detectPreset($from, $to);
     }
 
     public function applyRangePicker(): void
@@ -76,6 +99,14 @@ trait WithDateRange
             $this->rangeFrom = $this->pickerFrom;
             $this->rangeTo = $this->pickerTo;
         }
+
+        $currentRange = $this->dateRange();
+        $this->dispatch('pulse:range-changed', [
+            'from' => $currentRange->from,
+            'to' => $currentRange->to,
+            'preset' => $currentRange->preset,
+            'label' => $currentRange->displayLabel(),
+        ]);
 
         $this->rangePickerOpen = false;
         $this->resetDateRangePage();
